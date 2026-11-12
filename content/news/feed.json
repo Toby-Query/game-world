@@ -1,0 +1,125 @@
+{
+  "channel": "Archive News Network",
+  "items": [
+    {
+      "id": "curator-welcome",
+      "headline": "The Curator welcomes 4,000 new salvagers to the Archive",
+      "body": "Report to the museum for your first contract. Every artifact recovered brings the world one step closer to remembering.",
+      "tags": ["archive", "curator"]
+    },
+    {
+      "id": "island-surfaced-olympus",
+      "headline": "New landmass sighted east of the Archive: white cliffs, golden temple",
+      "body": "Survey drones report constant updrafts around the summit. Salvage permits open at dawn.",
+      "tags": ["islands"]
+    },
+    {
+      "id": "drowning-anniversary",
+      "headline": "Day of Remembrance: the city falls silent for the Drowning",
+      "body": "Archive records of the date remain sealed by order of the Curator, for the public good.",
+      "tags": ["lore", "curator"]
+    },
+    {
+      "id": "sandals-recovered",
+      "headline": "Record find: winged sandals recovered intact",
+      "body": "The salvager responsible declined interviews. Exhibit opens next cycle in the east hall.",
+      "tags": ["salvage", "museum"]
+    },
+    {
+      "id": "plague-reef-warning",
+      "headline": "Health advisory: Grey Rot cases linked to the southern reefs",
+      "body": "Symptoms include slow loss of strength. The Archive clinic reports no known cure within city limits.",
+      "tags": ["plague", "advisory"]
+    },
+    {
+      "id": "market-report",
+      "headline": "Market report: divine relic prices up 40% after storm season",
+      "body": "Traders blame the shortage on fewer crews braving open water. Common salvage remains steady.",
+      "tags": ["market"]
+    },
+    {
+      "id": "fog-town-missing",
+      "headline": "Third crew this month fails to return from fog-bound island",
+      "body": "Survivors of earlier expeditions describe a town where the roads all lead back to the square.",
+      "tags": ["islands", "advisory"]
+    },
+    {
+      "id": "museum-hours",
+      "headline": "Museum extends hours: the low-gravity hall now open to all",
+      "body": "Visitors are reminded not to jump near the exhibits. The Curator thanks you for your patience.",
+      "tags": ["museum"]
+    },
+    {
+      "id": "storm-north",
+      "headline": "Permanent storm over the northern rim shows no sign of moving",
+      "body": "Lightning strikes recorded at three per second. Sailors report a shape in the water below.",
+      "tags": ["weather", "islands"]
+    },
+    {
+      "id": "curator-statement",
+      "headline": "Curator: 'Every exhibit is a promise kept'",
+      "body": "In a rare statement, the Curator thanked salvagers for 'returning what the sea took'. No questions were taken.",
+      "tags": ["curator"]
+    },
+    {
+      "id": "sinking-rumour",
+      "headline": "Archive dismisses rumours that islands are sinking",
+      "body": "Tide gauges near recently looted ruins show a rise of 30 cm. Officials call the readings 'instrument drift'.",
+      "tags": ["lore", "islands"]
+    },
+    {
+      "id": "pvp-advisory",
+      "headline": "Reminder: the Archive guards do not intervene in duels",
+      "body": "Salvagers carrying valuable cargo are advised to travel in crews.",
+      "tags": ["advisory"]
+    },
+    {
+      "id": "dragon-palace",
+      "headline": "Divers report a lit palace on the sea floor",
+      "body": "Witnesses describe a staff that grew to the height of a tower before vanishing. Salvage unconfirmed.",
+      "tags": ["islands", "salvage"]
+    },
+    {
+      "id": "memory-clinic",
+      "headline": "Memory clinic waiting list reaches six months",
+      "body": "New arrivals with no memory of their past should register with the Curator's office as normal.",
+      "tags": ["archive"]
+    },
+    {
+      "id": "winter-isle",
+      "headline": "Hunters' horns heard over the frozen isle again",
+      "body": "Fishermen claim riders crossed the sky at midnight. The Archive asks salvagers not to answer the call.",
+      "tags": ["islands", "lore"]
+    },
+    {
+      "id": "tattoo-sighting",
+      "headline": "Unreadable tattoos spotted on several new arrivals",
+      "body": "Linguists at the Archive describe the script as 'older than the Drowning'. Research is ongoing.",
+      "tags": ["lore"]
+    },
+    {
+      "id": "underworld-cure",
+      "headline": "Rumour: springs beneath the white cliffs can cure the Rot",
+      "body": "The clinic warns that no one has returned from below to confirm it.",
+      "tags": ["plague", "islands"]
+    },
+    {
+      "id": "seed-money",
+      "headline": "Every new salvager receives 100 marks to start a new life",
+      "body": "Spend wisely. The market buys anything you cannot carry.",
+      "tags": ["market", "archive"]
+    },
+    {
+      "id": "orbital-signal",
+      "headline": "Faint signal detected from above the clouds",
+      "body": "Engineers say the pattern repeats every eight minutes, matching the length of an Archive day.",
+      "tags": ["lore"]
+    },
+    {
+      "id": "redacted",
+      "headline": "[REDACTED] confirms [REDACTED] at the [REDACTED]",
+      "body": "This bulletin has been withdrawn by order of the Curator. Thank you for watching.",
+      "tags": ["curator", "lore"]
+    }
+  ]
+}
