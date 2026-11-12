@@ -51,6 +51,17 @@ export function buildArchiveLevel(ctx: LevelContext): ArchiveLevel {
       exhibits.update(frame.elapsed);
       wing.update(frame.elapsed);
     },
+    setQuality(profile) {
+      // Shadow resolution follows the quality setting; 0 turns the sun's shadows off.
+      const sun = environment.key;
+      const size = profile.shadowMapSize;
+      sun.castShadow = size > 0;
+      if (size > 0 && sun.shadow.mapSize.x !== size) {
+        sun.shadow.mapSize.set(size, size);
+        sun.shadow.map?.dispose();
+        sun.shadow.map = null;
+      }
+    },
   };
 }
 

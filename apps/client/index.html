@@ -43,6 +43,55 @@
         letter-spacing: 0.2em;
         opacity: 1;
       }
+      body.tw-in-menu #hud {
+        display: none;
+      }
+      #loading {
+        position: fixed;
+        inset: 0;
+        z-index: 20;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(circle at 50% 40%, #16294a, #0b1420 70%);
+        transition: opacity 0.5s;
+      }
+      #loading.done {
+        opacity: 0;
+        pointer-events: none;
+      }
+      #loading .wrap {
+        width: min(420px, 80vw);
+        text-align: center;
+      }
+      #loading h1 {
+        margin: 0 0 24px;
+        font-size: 40px;
+        font-weight: 300;
+        letter-spacing: 0.4em;
+        text-transform: uppercase;
+      }
+      #loading .track {
+        height: 4px;
+        border-radius: 2px;
+        background: rgba(62, 230, 255, 0.15);
+        overflow: hidden;
+      }
+      #loading-bar {
+        width: 0;
+        height: 100%;
+        background: #3ee6ff;
+        box-shadow: 0 0 12px #3ee6ff;
+        transition: width 0.3s;
+      }
+      #loading-text {
+        margin-top: 12px;
+        font-size: 13px;
+        letter-spacing: 0.08em;
+        color: #a9d8ff;
+      }
+      #loading.failed #loading-bar {
+        background: #ff4f6d;
+      }
       #gate {
         position: fixed;
         inset: 0;
@@ -57,6 +106,19 @@
   <body>
     <div id="app"></div>
     <div id="hud"><strong>The World</strong><span id="renderer-label">loading</span></div>
+    <div
+      id="loading"
+      role="progressbar"
+      aria-label="Loading The World"
+      aria-valuemin="0"
+      aria-valuemax="100"
+    >
+      <div class="wrap">
+        <h1>The World</h1>
+        <div class="track"><div id="loading-bar"></div></div>
+        <div id="loading-text">Loading</div>
+      </div>
+    </div>
     <div id="gate">
       <div>
         <h1>The World</h1>
