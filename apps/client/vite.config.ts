@@ -1,6 +1,10 @@
+import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
+  resolve: {
+    alias: { '@content': fileURLToPath(new URL('../../content', import.meta.url)) },
+  },
   server: { port: 5173 },
   preview: { port: 4173 },
   build: {
