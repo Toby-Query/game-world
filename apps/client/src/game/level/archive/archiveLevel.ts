@@ -1,5 +1,6 @@
 import * as THREE from 'three/webgpu';
 import { Environment } from '../../environment/Environment';
+import { buildExhibitHall, type ExhibitHall } from '../../exhibits/exhibitHall';
 import { NewsNetwork } from '../../news/NewsNetwork';
 import { staticBox, staticCylinder } from '../builders';
 import type { Level, LevelContext } from '../Level';
@@ -8,6 +9,7 @@ import { ARCHIVE, towerPlacements } from './layout';
 export interface ArchiveLevel extends Level {
   environment: Environment;
   news: NewsNetwork;
+  exhibits: ExhibitHall;
 }
 
 /**
@@ -26,15 +28,18 @@ export function buildArchiveLevel(ctx: LevelContext): ArchiveLevel {
   const towers = buildTowers(ctx, mat);
   buildPiers(ctx, mat);
   buildNewsScreens(ctx, mat, news, towers);
+  const exhibits = buildExhibitHall(ctx, exhibitSlots(), ARCHIVE.museum.centre.z);
 
   const s = ARCHIVE.spawn;
   return {
     spawn: new THREE.Vector3(s.x, s.y, s.z),
     environment,
     news,
+    exhibits,
     update(frame) {
       environment.update(frame.dt, frame.elapsed, frame.camera, frame.playerPosition);
       news.update(frame.elapsed);
+      exhibits.update(frame.elapsed);
     },
   };
 }
@@ -279,6 +284,14 @@ function buildNewsScreens(
   const kiosk = { x: -7, z: ARCHIVE.spawn.z - 6 };
   staticBox(ctx, { x: 0.4, y: 2, z: 0.4 }, { x: kiosk.x, y: 1, z: kiosk.z }, m.trim);
   news.addScreen(3.2, 1.8, { x: kiosk.x, y: 2.9, z: kiosk.z }, Math.PI / 5);
+}
+
+/** Two rows of three pedestals inside the museum hall, leaving the entrance aisle clear. */
+function exhibitSlots(): { x: number; z: number }[] {
+  const { centre } = ARCHIVE.museum;
+  const rows = [centre.z - 5, centre.z + 5];
+  const columns = [-10, 0, 10];
+  return rows.flatMap((z) => columns.map((x) => ({ x: centre.x + x, z })));
 }
 
 function buildPiers(ctx: LevelContext, m: Materials): void {
