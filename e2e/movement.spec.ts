@@ -5,7 +5,7 @@ import { expect, test, type Page } from '@playwright/test';
 const SLOW = { timeout: 60_000 };
 
 async function boot(page: Page): Promise<void> {
-  await page.goto('/?autostart=1');
+  await page.goto('/?autostart=1&offline=1');
   await page.waitForFunction(() => window.__THE_WORLD__?.ready === true, undefined, SLOW);
   await page.waitForFunction(
     () => window.__THE_WORLD__?.player?.().grounded === true,

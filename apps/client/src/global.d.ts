@@ -14,6 +14,12 @@ declare global {
       camera?: (yaw: number, pitch: number, distance: number) => void;
       /** The physics zone the player is in and its current (blended) gravity, for tests. */
       zone?: () => { id: string | null; gravityY: number };
+      /** Connection status and the remote players currently visible, for tests. */
+      net?: () => {
+        status: string;
+        you: string | null;
+        remotes: { id: string; name: string; x: number; y: number; z: number }[];
+      };
       /** Renderer cost of the last frame, for performance budgets. */
       stats?: () => { drawCalls: number; triangles: number };
     };

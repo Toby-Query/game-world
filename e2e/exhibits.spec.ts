@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test('walking up to an exhibit and pressing E opens its plaque', async ({ page }) => {
   test.setTimeout(180_000);
-  await page.goto('/?autostart=1');
+  await page.goto('/?autostart=1&offline=1');
   await page.waitForFunction(() => window.__THE_WORLD__?.ready === true, undefined, {
     timeout: 60_000,
   });

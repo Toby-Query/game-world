@@ -57,7 +57,7 @@ async function standAt(page: Page, x: number, z: number, zone: string | null): P
 
 test('the Orbital Wing makes jumps floaty and leaving it restores gravity', async ({ page }) => {
   test.setTimeout(300_000);
-  await page.goto('/?autostart=1');
+  await page.goto('/?autostart=1&offline=1');
   await page.waitForFunction(() => window.__THE_WORLD__?.ready === true, undefined, SLOW);
 
   // Inside the low-gravity hall, away from its platforms.

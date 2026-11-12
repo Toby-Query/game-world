@@ -6,6 +6,7 @@ import { loadAppearance } from './game/character/characterStore';
 import { Game } from './game/Game';
 import { buildArchiveLevel } from './game/level/archive/archiveLevel';
 import { buildTestLevel } from './game/level/testLevel';
+import { startMultiplayer, type Multiplayer } from './net/multiplayer';
 import { loadSettings, qualityProfile } from './settings/settings';
 import { LoadingScreen } from './ui/LoadingScreen';
 import { Shell } from './ui/Shell';
@@ -71,12 +72,17 @@ async function start(): Promise<void> {
     // Not fatal: anything left compiles on first draw.
   }
 
+  let multiplayer: Multiplayer | null = null;
   const shell = new Shell({
     game,
     settings,
     sound: new Sound(settings.volume),
     saved,
     forceCreator: params.has('creator'),
+    // Join the server the first time the player enters the world (?offline=1 plays alone).
+    onEnterWorld: (appearance) => {
+      if (!multiplayer && !params.has('offline')) multiplayer = startMultiplayer(game, appearance);
+    },
   });
   // ?autostart=1 skips every menu (automated tests, quick iteration).
   if (params.has('autostart')) shell.enterWorld();
@@ -98,8 +104,7 @@ async function start(): Promise<void> {
           z: game.player.position.z,
           grounded: game.player.grounded,
         }),
-        teleport: (x: number, y: number, z: number) =>
-          game.player.teleport(new THREE.Vector3(x, y, z)),
+        teleport: (x: number, y: number, z: number) => game.teleport(new THREE.Vector3(x, y, z)),
         camera: (yaw: number, pitch: number, distance: number) => {
           game.orbit.yaw = yaw;
           game.orbit.pitch = pitch;
@@ -108,6 +113,11 @@ async function start(): Promise<void> {
         zone: () => ({
           id: game.zone?.id ?? null,
           gravityY: game.rules.gravity.y,
+        }),
+        net: () => ({
+          status: multiplayer?.client.status ?? 'offline',
+          you: multiplayer?.client.you ?? null,
+          remotes: multiplayer?.remotes.visible() ?? [],
         }),
         stats: () => ({
           drawCalls: renderer.info.render.drawCalls,
