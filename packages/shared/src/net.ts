@@ -82,6 +82,8 @@ export interface SnapshotMessage {
 export interface JoinOptions {
   appearance: Appearance;
   cell?: string;
+  /** Account session; signed-in players appear as their saved character. */
+  session?: string;
 }
 
 export function sanitizeJoinOptions(value: unknown): { name: string; appearance: Appearance } {

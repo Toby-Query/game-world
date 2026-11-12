@@ -400,3 +400,76 @@
 body.tw-in-menu .tw-net {
   display: none;
 }
+
+.tw-wallet {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  display: flex;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.tw-wallet span {
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: rgba(11, 20, 32, 0.72);
+  border: 1px solid rgba(231, 181, 74, 0.5);
+  color: #f4d48a;
+  font:
+    700 13px system-ui,
+    sans-serif;
+  letter-spacing: 0.04em;
+}
+
+.tw-wallet span + span {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #e8f1ff;
+}
+
+body.tw-in-menu .tw-wallet {
+  display: none;
+}
+
+.tw-account {
+  margin-top: 28px;
+  color: #a9d8ff;
+  font-size: 14px;
+}
+
+.tw-account button {
+  margin-left: 8px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: #3ee6ff;
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.tw-card input[type='email'] {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(62, 230, 255, 0.4);
+  background: rgba(11, 20, 32, 0.8);
+  color: #e8f1ff;
+  font: inherit;
+}
+
+.tw-card p {
+  margin: 0 0 14px;
+  color: #a9d8ff;
+}
+
+.tw-card a {
+  color: #3ee6ff;
+  word-break: break-all;
+}
+
+.tw-error {
+  color: #ff8fa3 !important;
+}

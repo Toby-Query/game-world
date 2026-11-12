@@ -3,7 +3,6 @@ import { MSG, NET, type Appearance, type Pose } from '@the-world/shared';
 import type { Game } from '../game/Game';
 import { NetClient, type NetStatus } from './NetClient';
 import { RemotePlayers } from './RemotePlayers';
-import { resolveServerUrl } from './serverUrl';
 
 export interface Multiplayer {
   readonly client: NetClient;
@@ -14,22 +13,30 @@ export interface Multiplayer {
  * Connects the local game to the server: sends our pose at the network tick rate, draws everyone
  * nearby, and applies the server's corrections.
  */
-export function startMultiplayer(game: Game, appearance: Appearance): Multiplayer {
-  const url = resolveServerUrl(import.meta.env.VITE_SERVER_URL as string | undefined, location);
+export function startMultiplayer(
+  game: Game,
+  url: string,
+  appearance: Appearance,
+  session: string | null,
+): Multiplayer {
   const remotes = new RemotePlayers(game.scene);
   const pill = statusPill();
 
-  const client = new NetClient(url, appearance, {
-    welcome: (m) => {
-      remotes.reset(m.you, m.players);
-      game.player.teleport(new THREE.Vector3(m.spawn.x, m.spawn.y, m.spawn.z));
+  const client = new NetClient(
+    url,
+    { appearance, ...(session ? { session } : {}) },
+    {
+      welcome: (m) => {
+        remotes.reset(m.you, m.players);
+        game.player.teleport(new THREE.Vector3(m.spawn.x, m.spawn.y, m.spawn.z));
+      },
+      joined: (p) => remotes.add(p),
+      left: (id) => remotes.remove(id),
+      snapshot: (m) => remotes.onSnapshot(m, performance.now()),
+      correction: (p) => game.player.teleport(new THREE.Vector3(p.x, p.y, p.z)),
+      status: (s) => renderStatus(pill, s, 0),
     },
-    joined: (p) => remotes.add(p),
-    left: (id) => remotes.remove(id),
-    snapshot: (m) => remotes.onSnapshot(m, performance.now()),
-    correction: (p) => game.player.teleport(new THREE.Vector3(p.x, p.y, p.z)),
-    status: (s) => renderStatus(pill, s, 0),
-  });
+  );
 
   game.onRespawn = () => client.send(MSG.respawn);
   game.onTeleport = (p) => client.send(MSG.teleport, { x: p.x, y: p.y, z: p.z });

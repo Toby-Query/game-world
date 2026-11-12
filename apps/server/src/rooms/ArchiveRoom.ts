@@ -14,12 +14,15 @@ import {
   type Vec3,
   type WelcomeMessage,
 } from '@the-world/shared';
+import type { AccountStore } from '../accounts/AccountStore';
 
 /** Feet position new players start at: the Archive spawn on the plaza. */
 export const ARCHIVE_SPAWN: Vec3 = { x: 0, y: 0, z: 22 };
 
 interface ServerPlayer extends Pose {
   id: string;
+  /** Account id when signed in; guests have none and nothing of theirs is saved. */
+  playerId: string | null;
   name: string;
   appearance: Appearance;
   /** Server time (ms) of the last accepted move. */
@@ -36,6 +39,9 @@ export interface ArchiveRoomOptions {
  * is physically possible, and every tick each client receives only the players near them.
  */
 export class ArchiveRoom extends Room {
+  /** Accounts, when the server has a database (set at startup). */
+  static accounts: AccountStore | null = null;
+
   override maxClients = 100;
   // Seconds a reserved seat waits for the client to connect; generous for slow machines.
   override seatReservationTimeout = 60;
@@ -57,10 +63,20 @@ export class ArchiveRoom extends Room {
     logger.info(`Archive room ${this.roomId} created`);
   }
 
-  override onJoin(client: Client, options: unknown): void {
-    const { name, appearance } = sanitizeJoinOptions(options);
+  override async onJoin(client: Client, options: unknown): Promise<void> {
+    let { name, appearance } = sanitizeJoinOptions(options);
+    // Signed-in players appear as their saved character, whatever the client sent.
+    const session = (options as { session?: unknown } | null)?.session;
+    const accounts = ArchiveRoom.accounts;
+    const playerId =
+      accounts && typeof session === 'string' ? await accounts.playerForSession(session) : null;
+    if (accounts && playerId) {
+      const me = await accounts.me(playerId);
+      if (me?.character) ({ name, appearance } = sanitizeJoinOptions({ appearance: me.character }));
+    }
     const player: ServerPlayer = {
       id: client.sessionId,
+      playerId,
       name,
       appearance,
       ...ARCHIVE_SPAWN,

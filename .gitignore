@@ -12,3 +12,6 @@ test-results/
 # Not committed yet: the repo is pushed through the GitHub connector, which cannot carry it.
 # Re-add once direct git access is set up, then switch CI to --frozen-lockfile.
 pnpm-lock.yaml
+
+# Local game server database (embedded Postgres)
+.data/
