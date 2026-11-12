@@ -10,6 +10,7 @@ import {
   type Quality,
   type Settings,
 } from '../settings/settings';
+import type { AccountClient } from '../net/account';
 import { CharacterCreator } from './CharacterCreator';
 import type { Sound } from './sound';
 import './ui.css';
@@ -24,6 +25,8 @@ export interface ShellOptions {
   forceCreator: boolean;
   /** Called each time the player enters the world, with the character they play. */
   onEnterWorld?: (appearance: Appearance) => void;
+  /** Accounts on the game server; null when playing offline. */
+  account?: AccountClient | null;
 }
 
 const CONTROLS: [string, string][] = [
@@ -78,6 +81,85 @@ export class Shell {
       ),
     );
     root.append(logo, tagline, menu);
+    if (this.opts.account) root.append(this.accountLine(this.opts.account));
+  }
+
+  /** "Signed in as …" or the guest prompt to sign in, under the title menu. */
+  private accountLine(account: AccountClient): HTMLElement {
+    const line = el('div', 'tw-account');
+    line.dataset.testid = 'account-status';
+    const text = el('span', '');
+    const action = el('button', '');
+    action.type = 'button';
+    if (account.me) {
+      text.textContent = `Signed in as ${account.me.email}`;
+      action.textContent = 'Sign out';
+      action.dataset.testid = 'title-signout';
+      action.addEventListener('click', () => {
+        void account.signOut().then(() => {
+          this.opts.saved = null;
+          this.showTitle();
+        });
+      });
+    } else {
+      text.textContent = 'Playing as a guest.';
+      action.textContent = 'Sign in to save your progress';
+      action.dataset.testid = 'title-signin';
+      action.addEventListener('click', () => this.showSignIn(account));
+    }
+    line.append(text, action);
+    return line;
+  }
+
+  /** Email in, sign-in link out. Locally there's no email: the link is shown here instead. */
+  private showSignIn(account: AccountClient): void {
+    const root = this.open('tw-card-screen', 'signin-panel');
+    const card = el('div', 'tw-card');
+    const title = el('h2', '');
+    title.textContent = 'Sign in';
+    const intro = el('p', '');
+    intro.textContent = 'We send you a sign-in link. No password needed.';
+    const email = document.createElement('input');
+    email.type = 'email';
+    email.name = 'email';
+    email.placeholder = 'you@example.com';
+    email.autocomplete = 'email';
+    const status = el('p', '');
+    const send = this.button('Send link', 'signin-send', () => {
+      send.disabled = true;
+      status.className = '';
+      status.textContent = 'Sending…';
+      account
+        .startSignIn(email.value)
+        .then((result) => {
+          status.textContent = `Check ${email.value.trim()} for your sign-in link.`;
+          if (result.devLink) {
+            const note = el('p', '');
+            note.textContent = 'This local server sends no email, so here is your link:';
+            const link = el('a', '');
+            link.href = result.devLink;
+            link.textContent = 'Open the sign-in link';
+            link.dataset.testid = 'dev-login-link';
+            note.append(document.createElement('br'), link);
+            status.after(note);
+          }
+        })
+        .catch((error: unknown) => {
+          send.disabled = false;
+          status.className = 'tw-error';
+          status.textContent = error instanceof Error ? error.message : 'Could not send the link';
+        });
+    });
+    card.append(
+      title,
+      intro,
+      email,
+      status,
+      send,
+      this.button('Back', 'signin-back', () => this.showTitle(), true),
+    );
+    root.append(card);
+    email.focus();
   }
 
   /** Drops straight into the world (used by ?autostart=1). */
@@ -107,6 +189,7 @@ export class Shell {
       onDone: (appearance) => {
         this.sound.blip(1.2);
         saveAppearance(appearance);
+        void this.opts.account?.saveCharacter(appearance).catch(() => undefined);
         this.opts.saved = appearance;
         this.opts.forceCreator = false;
         creator.close();

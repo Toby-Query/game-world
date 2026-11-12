@@ -65,6 +65,13 @@ Node 22, pnpm 10.
   to `ws://<page host>:2567`. The server answers `GET /health`.
 - Network messages and their validation live in `packages/shared/src/net.ts`; the server checks every
   move (`checkMove`) and only sends each player the others within `NET.interestRadius`.
+- Accounts, characters, wallets, the money ledger and inventories live in Postgres
+  (`apps/server/src/db/schema.ts`). Locally and in tests that is PGlite (embedded Postgres, stored in
+  `apps/server/.data/`); set `DATABASE_URL` (see `apps/server/.env.example`) for a real one such as
+  Neon. All money moves through `AccountStore.adjustBalance`, which writes a ledger row and never lets
+  a balance go negative. There is no client route that writes money or items.
+- Sign-in is a magic link. No email provider is wired up yet: outside production the server logs the
+  link and returns it to the page, which shows it as "Open the sign-in link".
 - Without a GPU, run the smoke test with `CHROME_PATH=/path/to/chrome` to reuse an installed Chrome.
 - `pnpm-lock.yaml` is not committed yet (see `.gitignore`); CI installs with `--no-frozen-lockfile`.
 - Files under `.github/workflows/` cannot be pushed through the GitHub connector (it lacks the
