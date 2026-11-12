@@ -7,11 +7,13 @@ import {
   type TimedPose,
 } from '@the-world/shared';
 import { CharacterModel } from '../game/character/CharacterModel';
+import { SpeechBubble } from '../game/character/SpeechBubble';
 
 interface Remote {
   profile: PlayerProfile;
   model: CharacterModel;
   label: THREE.Sprite;
+  bubble: SpeechBubble;
   buffer: TimedPose[];
   /** Server time this player was last in a snapshot (they may have left our interest radius). */
   lastSeen: number;
@@ -42,8 +44,17 @@ export class RemotePlayers {
     const label = nameLabel(profile.name);
     label.position.y = 2.25 * profile.appearance.height;
     model.root.add(label);
+    const bubble = new SpeechBubble(2.75 * profile.appearance.height);
+    model.root.add(bubble.sprite);
     this.scene.add(model.root);
-    this.remotes.set(profile.id, { profile, model, label, buffer: [], lastSeen: -Infinity });
+    this.remotes.set(profile.id, {
+      profile,
+      model,
+      label,
+      bubble,
+      buffer: [],
+      lastSeen: -Infinity,
+    });
   }
 
   remove(id: string): void {
@@ -52,7 +63,13 @@ export class RemotePlayers {
     this.scene.remove(r.model.root);
     r.label.material.map?.dispose();
     r.label.material.dispose();
+    r.bubble.dispose();
     this.remotes.delete(id);
+  }
+
+  /** Shows what a remote player said nearby above their head. */
+  say(id: string, text: string, localNow: number): void {
+    this.remotes.get(id)?.bubble.say(text, localNow);
   }
 
   onSnapshot(message: SnapshotMessage, localNow: number): void {
@@ -73,6 +90,7 @@ export class RemotePlayers {
     const serverNow = localNow + this.offset;
     const renderTime = serverNow - NET.interpolationDelayMs;
     for (const r of this.remotes.values()) {
+      r.bubble.update(localNow);
       const pose = interpolatePose(r.buffer, renderTime);
       const visible = pose !== null && serverNow - r.lastSeen < HIDE_AFTER_MS;
       r.model.root.visible = visible;
@@ -84,10 +102,13 @@ export class RemotePlayers {
   }
 
   /** Remote players currently visible (inside the interest radius), for the HUD and tests. */
-  visible(): { id: string; name: string; x: number; y: number; z: number }[] {
+  visible(): { id: string; name: string; x: number; y: number; z: number; bubble: string }[] {
     return [...this.remotes.values()]
       .filter((r) => r.model.root.visible)
-      .map((r) => ({ id: r.profile.id, name: r.profile.name, ...r.model.root.position }));
+      .map((r) => {
+        const { x, y, z } = r.model.root.position;
+        return { id: r.profile.id, name: r.profile.name, x, y, z, bubble: r.bubble.text };
+      });
   }
 }
 

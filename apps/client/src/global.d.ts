@@ -20,7 +20,15 @@ declare global {
       net?: () => {
         status: string;
         you: string | null;
-        remotes: { id: string; name: string; x: number; y: number; z: number }[];
+        remotes: {
+          id: string;
+          name: string;
+          x: number;
+          y: number;
+          z: number;
+          /** What they are saying nearby (speech bubble), or ''. */
+          bubble: string;
+        }[];
       };
       /** The signed-in account (character, balance, inventory), or null for guests. */
       account?: () => Me | null;

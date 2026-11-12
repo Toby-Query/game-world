@@ -3,6 +3,7 @@ import {
   ARCHIVE_ROOM,
   MSG,
   cellFor,
+  type ChatMessage,
   type JoinOptions,
   type PlayerProfile,
   type SnapshotMessage,
@@ -19,6 +20,8 @@ export interface NetHandlers {
   left(id: string): void;
   snapshot(message: SnapshotMessage): void;
   correction(position: Vec3): void;
+  chat(message: ChatMessage): void;
+  notice(text: string): void;
   status(status: NetStatus): void;
 }
 
@@ -77,6 +80,8 @@ export class NetClient {
     room.onMessage(MSG.left, (m: { id: string }) => this.handlers.left(m.id));
     room.onMessage(MSG.snapshot, (m: SnapshotMessage) => this.handlers.snapshot(m));
     room.onMessage(MSG.correction, (m: Vec3) => this.handlers.correction(m));
+    room.onMessage(MSG.chatMessage, (m: ChatMessage) => this.handlers.chat(m));
+    room.onMessage(MSG.chatNotice, (m: { text: string }) => this.handlers.notice(m.text));
     // The SDK tries to resume the same session first; `onLeave` means that gave up.
     room.onDrop(() => this.setStatus('reconnecting'));
     room.onReconnect(() => this.setStatus('online'));
