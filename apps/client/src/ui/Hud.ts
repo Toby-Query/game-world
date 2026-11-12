@@ -5,6 +5,8 @@ export class Hud {
   private readonly prompt: HTMLDivElement;
   private readonly promptText: HTMLSpanElement;
   private readonly panel: HTMLDivElement;
+  private readonly zoneBanner: HTMLDivElement;
+  private zoneTimer: ReturnType<typeof setTimeout> | undefined;
 
   constructor(root: HTMLElement = document.body) {
     this.prompt = el('div', 'tw-prompt');
@@ -16,7 +18,21 @@ export class Hud {
     this.panel = el('div', 'tw-panel');
     this.panel.setAttribute('role', 'dialog');
     this.panel.dataset.testid = 'plaque';
-    root.append(this.prompt, this.panel);
+    this.zoneBanner = el('div', 'tw-zone');
+    this.zoneBanner.dataset.testid = 'zone-banner';
+    root.append(this.prompt, this.panel, this.zoneBanner);
+  }
+
+  /** Briefly names the zone the player just entered (null when leaving to the open world). */
+  showZone(name: string | null): void {
+    clearTimeout(this.zoneTimer);
+    if (name === null) {
+      this.zoneBanner.classList.remove('visible');
+      return;
+    }
+    this.zoneBanner.textContent = name;
+    this.zoneBanner.classList.add('visible');
+    this.zoneTimer = setTimeout(() => this.zoneBanner.classList.remove('visible'), 4000);
   }
 
   showPrompt(text: string | null): void {

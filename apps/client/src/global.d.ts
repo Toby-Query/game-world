@@ -12,6 +12,8 @@ declare global {
       teleport?: (x: number, y: number, z: number) => void;
       /** Points the orbit camera, for screenshots and tests. */
       camera?: (yaw: number, pitch: number, distance: number) => void;
+      /** The physics zone the player is in and its current (blended) gravity, for tests. */
+      zone?: () => { id: string | null; gravityY: number };
       /** Renderer cost of the last frame, for performance budgets. */
       stats?: () => { drawCalls: number; triangles: number };
     };
