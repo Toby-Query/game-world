@@ -51,6 +51,11 @@ export class PlayerController {
     this.position.copy(spawn);
   }
 
+  /** Feet position after the latest physics step (not interpolated). */
+  get feet(): THREE.Vector3 {
+    return this.current;
+  }
+
   get grounded(): boolean {
     return this.motor.grounded;
   }
@@ -69,6 +74,7 @@ export class PlayerController {
       cameraYaw,
       gravityY: rules.gravity.y,
       jumpMultiplier: rules.jumpMultiplier,
+      airDrag: rules.airDrag,
     });
 
     const v = this.motor.velocity;

@@ -1,6 +1,14 @@
 import * as THREE from 'three/webgpu';
 import type RAPIER from '@dimforge/rapier3d-compat';
-import { DEFAULT_APPEARANCE, resolveZoneRules, type Appearance } from '@the-world/shared';
+import {
+  DEFAULT_APPEARANCE,
+  DEFAULT_ZONE_RULES,
+  resolveZoneRules,
+  rulesAt,
+  type Appearance,
+  type ZoneRules,
+  type ZoneVolume,
+} from '@the-world/shared';
 import { OrbitCamera, type CameraSettings } from './camera/OrbitCamera';
 import { CharacterModel } from './character/CharacterModel';
 import { Hud } from '../ui/Hud';
@@ -110,11 +118,11 @@ export class Game {
       }
 
       // Physics keeps running in the creator (with no input) so the character stays grounded.
-      const rules = resolveZoneRules();
       const steps = this.fixed.advance(dt);
       const move = this.creatorMode ? IDLE : this.input.move();
       for (let i = 0; i < steps; i++) {
-        this.player.fixedUpdate(PHYSICS_STEP, move, this.orbit.yaw, rules);
+        this.updateZone();
+        this.player.fixedUpdate(PHYSICS_STEP, move, this.orbit.yaw, this.rules);
         this.world.timestep = PHYSICS_STEP;
         this.world.step();
       }
@@ -147,6 +155,21 @@ export class Game {
     });
 
     this.opts.renderer.render(this.scene, this.camera);
+  }
+
+  /** The physics rules where the player stands, blended at zone edges. */
+  rules: ZoneRules = DEFAULT_ZONE_RULES;
+  /** The zone the player is in, or null in the open world. */
+  zone: ZoneVolume | null = null;
+
+  private updateZone(): void {
+    const { rules, zone } = rulesAt(this.level.zones ?? [], this.player.feet);
+    this.rules = rules;
+    this.world.gravity = rules.gravity;
+    if (zone?.id !== this.zone?.id) {
+      this.zone = zone;
+      this.hud.showZone(zone?.name ?? null);
+    }
   }
 
   /** E uses the nearest interactable or closes an open panel; Esc and walking away also close it. */
