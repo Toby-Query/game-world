@@ -37,6 +37,12 @@ export const MSG = {
   snapshot: 'snapshot',
   /** server → client: the server rejected your move; snap here (Vec3). */
   correction: 'correction',
+  /** client → server: say something (ChatSend). */
+  chat: 'chat',
+  /** server → client: someone said something you can hear (ChatMessage). */
+  chatMessage: 'chat-message',
+  /** server → client: a message about your own chat, e.g. rate limited ({ text }). */
+  chatNotice: 'chat-notice',
 } as const;
 
 /** Body pose sent with every move so remote characters animate. */

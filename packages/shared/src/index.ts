@@ -1,5 +1,6 @@
 export * from './account';
 export * from './appearance';
+export * from './chat';
 export * from './constants';
 export * from './exhibits';
 export * from './net';

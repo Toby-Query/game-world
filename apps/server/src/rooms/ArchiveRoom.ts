@@ -1,12 +1,18 @@
 import { Room, logger, type Client } from '@colyseus/core';
+import { randomUUID } from 'node:crypto';
 import {
+  CHAT,
   MSG,
   NET,
+  RateLimiter,
   checkMove,
+  maskProfanity,
+  parseChatSend,
   parsePose,
   playersNear,
   sanitizeJoinOptions,
   type Appearance,
+  type ChatMessage,
   type PlayerProfile,
   type PlayerSnapshot,
   type Pose,
@@ -15,6 +21,10 @@ import {
   type WelcomeMessage,
 } from '@the-world/shared';
 import type { AccountStore } from '../accounts/AccountStore';
+import { BLOCKED_WORDS } from '../chat/blockedWords';
+
+/** Presence channel that carries global chat between every cell room. */
+const GLOBAL_CHAT = 'chat:global';
 
 /** Feet position new players start at: the Archive spawn on the plaza. */
 export const ARCHIVE_SPAWN: Vec3 = { x: 0, y: 0, z: 22 };
@@ -27,6 +37,7 @@ interface ServerPlayer extends Pose {
   appearance: Appearance;
   /** Server time (ms) of the last accepted move. */
   lastMoveAt: number;
+  chatLimit: RateLimiter;
 }
 
 export interface ArchiveRoomOptions {
@@ -47,6 +58,9 @@ export class ArchiveRoom extends Room {
   override seatReservationTimeout = 60;
   readonly players = new Map<string, ServerPlayer>();
   private allowTeleport = false;
+  private readonly relayGlobal = (message: ChatMessage): void => {
+    this.broadcast(MSG.chatMessage, message);
+  };
 
   override onCreate(options: ArchiveRoomOptions = {}): void {
     this.allowTeleport = options.allowTeleport ?? process.env.NODE_ENV !== 'production';
@@ -60,7 +74,14 @@ export class ArchiveRoom extends Room {
       const pose = parsePose({ facing: 0, ...(message as object) });
       if (pose) this.place(client, pose);
     });
+    this.onMessage(MSG.chat, (client, message: unknown) => this.onChat(client, message));
+    // Global chat reaches every cell room, through presence (in-process now, Redis when scaled).
+    void this.presence.subscribe(GLOBAL_CHAT, this.relayGlobal);
     logger.info(`Archive room ${this.roomId} created`);
+  }
+
+  override onDispose(): void {
+    void this.presence.unsubscribe(GLOBAL_CHAT, this.relayGlobal);
   }
 
   override async onJoin(client: Client, options: unknown): Promise<void> {
@@ -85,6 +106,7 @@ export class ArchiveRoom extends Room {
       grounded: true,
       vy: 0,
       lastMoveAt: Date.now(),
+      chatLimit: new RateLimiter(),
     };
     this.players.set(client.sessionId, player);
     const welcome: WelcomeMessage = {
@@ -124,6 +146,40 @@ export class ArchiveRoom extends Room {
     const result = checkMove(player, pose, (now - player.lastMoveAt) / 1000);
     Object.assign(player, pose, result.position, { lastMoveAt: now });
     if (!result.ok) client.send(MSG.correction, result.position);
+  }
+
+  /**
+   * Chat is rate limited and filtered here, so every client sees the same (masked) text. Nearby
+   * messages go to players within earshot, including the speaker; global ones to everyone.
+   */
+  private onChat(client: Client, raw: unknown): void {
+    const player = this.players.get(client.sessionId);
+    const send = parseChatSend(raw);
+    if (!player || !send) return;
+    if (!player.chatLimit.allow()) {
+      const wait = Math.ceil(player.chatLimit.waitSeconds());
+      client.send(MSG.chatNotice, { text: `Slow down: you can chat again in ${wait}s.` });
+      return;
+    }
+    const message: ChatMessage = {
+      id: randomUUID(),
+      from: player.id,
+      name: player.name,
+      channel: send.channel,
+      text: maskProfanity(send.text, BLOCKED_WORDS),
+      t: Date.now(),
+    };
+    if (send.channel === 'global') {
+      void this.presence.publish(GLOBAL_CHAT, message);
+      return;
+    }
+    const r2 = CHAT.proximityRadius ** 2;
+    for (const other of this.clients) {
+      const p = this.players.get(other.sessionId);
+      if (p && (p.x - player.x) ** 2 + (p.z - player.z) ** 2 <= r2) {
+        other.send(MSG.chatMessage, message);
+      }
+    }
   }
 
   /** Server-side move without speed checks (spawn, respawn, debug teleport). */
