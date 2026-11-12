@@ -1,16 +1,19 @@
 import * as THREE from 'three/webgpu';
 import RAPIER from '@dimforge/rapier3d-compat';
-import { DEFAULT_APPEARANCE, GAME_TITLE } from '@the-world/shared';
+import { DEFAULT_APPEARANCE, GAME_TITLE, httpUrlFor } from '@the-world/shared';
 import { currentDevice, isDesktopDevice } from './device';
-import { loadAppearance } from './game/character/characterStore';
+import { loadAppearance, saveAppearance } from './game/character/characterStore';
 import { Game } from './game/Game';
 import { buildArchiveLevel } from './game/level/archive/archiveLevel';
 import { buildTestLevel } from './game/level/testLevel';
+import { AccountClient } from './net/account';
 import { startMultiplayer, type Multiplayer } from './net/multiplayer';
+import { resolveServerUrl } from './net/serverUrl';
 import { loadSettings, qualityProfile } from './settings/settings';
 import { LoadingScreen } from './ui/LoadingScreen';
 import { Shell } from './ui/Shell';
 import { Sound } from './ui/sound';
+import { WalletHud } from './ui/WalletHud';
 
 const nextFrame = (): Promise<void> => new Promise((r) => requestAnimationFrame(() => r()));
 
@@ -52,7 +55,35 @@ async function start(): Promise<void> {
   await nextFrame();
   const params = new URLSearchParams(location.search);
   const buildLevel = params.get('level') === 'test' ? buildTestLevel : buildArchiveLevel;
-  const saved = loadAppearance();
+  const offline = params.has('offline');
+  const serverUrl = resolveServerUrl(
+    import.meta.env.VITE_SERVER_URL as string | undefined,
+    location,
+  );
+
+  // Signed-in players get their saved character from the server (a guest's local character is
+  // uploaded on their first sign-in). ?login=<token> finishes a sign-in link.
+  const account = offline ? null : new AccountClient(httpUrlFor(serverUrl));
+  let saved = loadAppearance();
+  if (account) {
+    loading.set(0.6, 'Signing in');
+    const loginToken = params.get('login');
+    const me = await account.restore(loginToken);
+    if (loginToken) {
+      params.delete('login');
+      const query = params.toString();
+      history.replaceState(null, '', location.pathname + (query ? `?${query}` : ''));
+    }
+    if (me?.character) {
+      saved = me.character;
+      saveAppearance(me.character);
+    } else if (me && saved) {
+      void account.saveCharacter(saved).catch(() => undefined);
+    }
+    const wallet = new WalletHud();
+    account.onChange = (m) => wallet.show(m);
+    wallet.show(account.me);
+  }
   const game = new Game({
     renderer,
     rapier: RAPIER,
@@ -79,9 +110,12 @@ async function start(): Promise<void> {
     sound: new Sound(settings.volume),
     saved,
     forceCreator: params.has('creator'),
+    account,
     // Join the server the first time the player enters the world (?offline=1 plays alone).
     onEnterWorld: (appearance) => {
-      if (!multiplayer && !params.has('offline')) multiplayer = startMultiplayer(game, appearance);
+      if (!multiplayer && !offline) {
+        multiplayer = startMultiplayer(game, serverUrl, appearance, account?.session ?? null);
+      }
     },
   });
   // ?autostart=1 skips every menu (automated tests, quick iteration).
@@ -119,6 +153,7 @@ async function start(): Promise<void> {
           you: multiplayer?.client.you ?? null,
           remotes: multiplayer?.remotes.visible() ?? [],
         }),
+        account: () => account?.me ?? null,
         stats: () => ({
           drawCalls: renderer.info.render.drawCalls,
           triangles: renderer.info.render.triangles,

@@ -1,3 +1,5 @@
+import type { Me } from '@the-world/shared';
+
 export {};
 
 declare global {
@@ -20,6 +22,8 @@ declare global {
         you: string | null;
         remotes: { id: string; name: string; x: number; y: number; z: number }[];
       };
+      /** The signed-in account (character, balance, inventory), or null for guests. */
+      account?: () => Me | null;
       /** Renderer cost of the last frame, for performance budgets. */
       stats?: () => { drawCalls: number; triangles: number };
     };

@@ -3,7 +3,6 @@ import {
   ARCHIVE_ROOM,
   MSG,
   cellFor,
-  type Appearance,
   type JoinOptions,
   type PlayerProfile,
   type SnapshotMessage,
@@ -38,7 +37,7 @@ export class NetClient {
 
   constructor(
     url: string,
-    private readonly appearance: Appearance,
+    private readonly join: Omit<JoinOptions, 'cell'>,
     private readonly handlers: NetHandlers,
   ) {
     this.client = new Client(url);
@@ -48,7 +47,7 @@ export class NetClient {
     if (this.closed) return;
     this.setStatus(this.attempt === 0 ? 'connecting' : 'reconnecting');
     try {
-      const options: JoinOptions = { appearance: this.appearance, cell: cellFor(0, 0) };
+      const options: JoinOptions = { ...this.join, cell: cellFor(0, 0) };
       const room = await this.client.joinOrCreate(ARCHIVE_ROOM, options);
       this.attach(room);
       this.attempt = 0;
