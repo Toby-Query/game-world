@@ -3,7 +3,9 @@ import type RAPIER from '@dimforge/rapier3d-compat';
 import { DEFAULT_APPEARANCE, resolveZoneRules, type Appearance } from '@the-world/shared';
 import { OrbitCamera, type CameraSettings } from './camera/OrbitCamera';
 import { CharacterModel } from './character/CharacterModel';
+import { Hud } from '../ui/Hud';
 import { Input } from './input';
+import { Interactions } from './interact/Interactions';
 import type { Level, LevelContext } from './level/Level';
 import { FixedStep } from './player/movement';
 import { PlayerController } from './player/PlayerController';
@@ -29,6 +31,8 @@ export class Game {
   readonly avatar: CharacterModel;
   readonly orbit: OrbitCamera;
   readonly level: Level;
+  readonly interactions = new Interactions();
+  readonly hud = new Hud();
   private readonly fixed = new FixedStep(PHYSICS_STEP);
   private readonly timer = new THREE.Timer();
   private readonly focus = new THREE.Vector3();
@@ -39,7 +43,14 @@ export class Game {
     const { rapier, renderer } = opts;
     this.world = new rapier.World(resolveZoneRules().gravity);
     this.input = new Input(renderer.domElement);
-    this.level = opts.buildLevel({ scene: this.scene, rapier, world: this.world });
+    this.interactions.onFocusChange = (item) => this.hud.showPrompt(item?.prompt ?? null);
+    this.level = opts.buildLevel({
+      scene: this.scene,
+      rapier,
+      world: this.world,
+      interactions: this.interactions,
+      hud: this.hud,
+    });
 
     this.player = new PlayerController(rapier, this.world, this.level.spawn);
     this.avatar = new CharacterModel(opts.appearance ?? DEFAULT_APPEARANCE);
@@ -94,6 +105,8 @@ export class Game {
       this.player.motor.velocity.y,
     );
 
+    this.updateInteractions();
+
     this.focus.copy(this.player.position).y += 1.6;
     this.orbit.update(this.focus, dt, this.player.collider);
     this.level.update?.({
@@ -104,5 +117,19 @@ export class Game {
     });
 
     this.opts.renderer.render(this.scene, this.camera);
+  }
+
+  /** E uses the nearest interactable or closes an open panel; Esc and walking away also close it. */
+  private updateInteractions(): void {
+    this.interactions.update(this.player.position);
+    const pressedE = this.input.wasPressed('KeyE');
+    if (this.hud.panelOpen) {
+      if (pressedE || this.input.wasPressed('Escape') || !this.interactions.current) {
+        this.hud.closePanel();
+        this.hud.showPrompt(this.interactions.current?.prompt ?? null);
+      }
+    } else if (pressedE) {
+      this.interactions.interact();
+    }
   }
 }
