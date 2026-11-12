@@ -17,6 +17,10 @@ import { Interactions } from './interact/Interactions';
 import type { Level, LevelContext } from './level/Level';
 import { FixedStep, type MoveInput } from './player/movement';
 import { PlayerController } from './player/PlayerController';
+import { BASE_LOOK_SPEED, qualityProfile, type Settings } from '../settings/settings';
+
+/** What the game is showing: the title fly-by, the character creator, or normal play. */
+export type GameMode = 'title' | 'creator' | 'play';
 
 export interface GameOptions {
   renderer: THREE.WebGPURenderer;
@@ -47,8 +51,8 @@ export class Game {
   private readonly focus = new THREE.Vector3();
   private elapsed = 0;
   paused = false;
-  /** While true the player stands still facing the camera, framed for the character creator. */
-  private creatorMode = false;
+  private mode: GameMode = 'play';
+  private menuOpen = false;
 
   constructor(private readonly opts: GameOptions) {
     const { rapier, renderer } = opts;
@@ -78,20 +82,47 @@ export class Game {
     this.timer.connect(document);
   }
 
-  /** Frames the character for the creator: movement off, camera in front, character on the right. */
-  setCreatorMode(on: boolean): void {
-    this.creatorMode = on;
-    this.input.enabled = !on;
-    if (on) {
-      this.input.releasePointerLock();
+  /**
+   * Title: the camera flies around the Archive and the player idles. Creator: movement off, camera
+   * in front of the character. Play: normal control.
+   */
+  setMode(mode: GameMode): void {
+    const from = this.mode;
+    this.mode = mode;
+    this.updateInputEnabled();
+    if (mode === 'creator') {
       this.orbit.yaw = Math.PI;
       this.orbit.pitch = -0.08;
       this.orbit.distance = 3.6;
-    } else {
+    } else if (mode === 'play' && from !== 'play') {
       this.orbit.yaw = 0;
       this.orbit.pitch = -0.25;
       this.orbit.distance = 6;
     }
+  }
+
+  get currentMode(): GameMode {
+    return this.mode;
+  }
+
+  /** A menu (pause, settings) is over the game: input off, world keeps running. */
+  setMenuOpen(open: boolean): void {
+    this.menuOpen = open;
+    this.updateInputEnabled();
+  }
+
+  private updateInputEnabled(): void {
+    this.input.enabled = this.mode === 'play' && !this.menuOpen;
+  }
+
+  applySettings(settings: Settings): void {
+    this.orbit.settings = {
+      sensitivity: BASE_LOOK_SPEED * settings.sensitivity,
+      invertY: settings.invertY,
+    };
+    const profile = qualityProfile(settings.quality, window.devicePixelRatio);
+    this.opts.renderer.setPixelRatio(profile.pixelRatio);
+    this.level.setQuality?.(profile);
   }
 
   setAppearance(appearance: Appearance): void {
@@ -111,7 +142,7 @@ export class Game {
     this.elapsed += dt;
 
     if (!this.paused) {
-      if (!this.creatorMode) {
+      if (this.mode === 'play') {
         const look = this.input.consumeLook();
         this.orbit.look(look.dx, look.dy);
         this.orbit.zoom(this.input.consumeWheel());
@@ -119,7 +150,7 @@ export class Game {
 
       // Physics keeps running in the creator (with no input) so the character stays grounded.
       const steps = this.fixed.advance(dt);
-      const move = this.creatorMode ? IDLE : this.input.move();
+      const move = this.input.enabled ? this.input.move() : IDLE;
       for (let i = 0; i < steps; i++) {
         this.updateZone();
         this.player.fixedUpdate(PHYSICS_STEP, move, this.orbit.yaw, this.rules);
@@ -131,9 +162,8 @@ export class Game {
 
     this.player.update(this.fixed.alpha, dt);
     this.avatar.root.position.copy(this.player.position);
-    this.avatar.root.rotation.y = this.creatorMode
-      ? Math.sin(this.elapsed * 0.6) * 0.5
-      : this.player.facing;
+    this.avatar.root.rotation.y =
+      this.mode === 'creator' ? Math.sin(this.elapsed * 0.6) * 0.5 : this.player.facing;
     this.avatar.animate(
       dt,
       this.player.horizontalSpeed,
@@ -143,10 +173,15 @@ export class Game {
 
     this.updateInteractions();
 
-    this.focus.copy(this.player.position).y += this.creatorMode ? 1.1 : 1.6;
-    // In the creator the panel covers the left of the screen, so shift the character right.
-    if (this.creatorMode) this.focus.x += 1.1;
-    this.orbit.update(this.focus, dt, this.player.collider);
+    if (this.mode === 'title') {
+      this.flyBy();
+    } else {
+      const creator = this.mode === 'creator';
+      this.focus.copy(this.player.position).y += creator ? 1.1 : 1.6;
+      // In the creator the panel covers the left of the screen, so shift the character right.
+      if (creator) this.focus.x += 1.1;
+      this.orbit.update(this.focus, dt, this.player.collider);
+    }
     this.level.update?.({
       dt,
       elapsed: this.elapsed,
@@ -155,6 +190,20 @@ export class Game {
     });
 
     this.opts.renderer.render(this.scene, this.camera);
+  }
+
+  /** Slow circle out over the sea, looking back at the Archive skyline (title screen). */
+  private flyBy(): void {
+    const a = 0.35 + this.elapsed * 0.025;
+    const radius = 125;
+    this.camera.position.set(
+      Math.sin(a) * radius,
+      18 + Math.sin(this.elapsed * 0.15) * 3,
+      Math.cos(a) * radius,
+    );
+    // Aim left of the Archive so the skyline sits on the right, clear of the title text.
+    const offset = 30;
+    this.camera.lookAt(-Math.cos(a) * offset, 12, Math.sin(a) * offset - 8);
   }
 
   /** The physics rules where the player stands, blended at zone edges. */
