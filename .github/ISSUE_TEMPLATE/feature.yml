@@ -1,0 +1,46 @@
+name: Feature ticket
+description: A unit of work an agent can build without asking questions.
+title: '[P?] '
+labels: ['build-me']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Write one ticket per pull request. Remove the `build-me` label if it is not ready yet.
+        The agent takes the oldest open `build-me` ticket whose dependencies are closed.
+  - type: textarea
+    id: goal
+    attributes:
+      label: Goal
+      description: What the player or developer gets when this is done, in one or two sentences.
+    validations:
+      required: true
+  - type: textarea
+    id: scope
+    attributes:
+      label: Scope
+      description: The concrete pieces to build, as a bullet list.
+      placeholder: |
+        - ...
+    validations:
+      required: true
+  - type: textarea
+    id: done
+    attributes:
+      label: Done when
+      description: Observable checks that prove it works.
+    validations:
+      required: true
+  - type: textarea
+    id: out-of-scope
+    attributes:
+      label: Out of scope
+      description: What not to build in this ticket.
+  - type: input
+    id: depends-on
+    attributes:
+      label: Depends on
+      description: Issue numbers that must be closed first, e.g. "#5, #6", or "Nothing".
+      placeholder: Nothing
+    validations:
+      required: true
