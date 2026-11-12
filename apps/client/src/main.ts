@@ -2,7 +2,8 @@ import * as THREE from 'three/webgpu';
 import RAPIER from '@dimforge/rapier3d-compat';
 import { GAME_TITLE } from '@the-world/shared';
 import { currentDevice, isDesktopDevice } from './device';
-import { createPlaceholderScene } from './scene';
+import { Game } from './game/Game';
+import { buildTestLevel } from './game/level/testLevel';
 
 async function start(): Promise<void> {
   document.title = GAME_TITLE;
@@ -30,28 +31,31 @@ async function start(): Promise<void> {
     ? 'webgpu'
     : 'webgl';
   const label = document.getElementById('renderer-label');
-  if (label) label.textContent = `placeholder scene · ${backend}`;
+  if (label)
+    label.textContent = `${backend} · click to look · WASD move · Shift sprint · Space jump`;
 
-  const world = createPlaceholderScene(RAPIER);
-
-  const resize = (): void => {
-    const { clientWidth: w, clientHeight: h } = container;
-    renderer.setSize(w, h, false);
-    world.camera.aspect = w / h;
-    world.camera.updateProjectionMatrix();
-  };
+  const game = new Game({ renderer, rapier: RAPIER, buildLevel: buildTestLevel });
+  const resize = (): void => game.resize(container.clientWidth, container.clientHeight);
   resize();
   window.addEventListener('resize', resize);
 
-  const timer = new THREE.Timer();
-  timer.connect(document);
+  let first = true;
   await renderer.setAnimationLoop((time) => {
-    timer.update(time);
-    world.update(timer.getDelta());
-    renderer.render(world.scene, world.camera);
+    game.frame(time);
+    if (first) {
+      first = false;
+      window.__THE_WORLD__ = {
+        ready: true,
+        backend,
+        player: () => ({
+          x: game.player.position.x,
+          y: game.player.position.y,
+          z: game.player.position.z,
+          grounded: game.player.grounded,
+        }),
+      };
+    }
   });
-
-  window.__THE_WORLD__ = { ready: true, backend };
 }
 
 start().catch((error: unknown) => {
