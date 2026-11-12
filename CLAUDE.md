@@ -5,6 +5,24 @@ museum city (the Archive). Full spec: https://claude.ai/artifact/PSCBEiLPrjeJzxP
 
 Work is driven by GitHub issues. Agents build issues labelled `build-me`, one PR per issue.
 
+## Ticket loop
+
+| Label         | Meaning                                                      |
+| ------------- | ------------------------------------------------------------ |
+| `build-me`    | Ready for an agent to build                                  |
+| `needs-input` | Agent is blocked; its question is in the latest comment      |
+| `epic`        | Planning issue for a phase; broken into tickets, never built |
+
+1. Take the oldest open `build-me` issue whose "Depends on" issues are all closed.
+2. Branch `issue-<number>-<slug>` from `main`; one PR per issue, body starts with `Closes #<number>`.
+3. Build it and meet the definition of done below.
+4. Merge when CI is green. Comment on the issue how to try it locally (and the live link once
+   deployment exists), then close it.
+5. If the ticket is unclear or blocked, do not guess: add `needs-input`, remove `build-me`, and ask
+   the question in a comment.
+
+New tickets use the issue form in `.github/ISSUE_TEMPLATE/feature.yml`.
+
 ## Layout
 
 | Path                      | What lives there                                                     |
@@ -44,6 +62,8 @@ Node 22, pnpm 10.
   `?autostart=1` must always skip menus and drop straight into the world.
 - Without a GPU, run the smoke test with `CHROME_PATH=/path/to/chrome` to reuse an installed Chrome.
 - `pnpm-lock.yaml` is not committed yet (see `.gitignore`); CI installs with `--no-frozen-lockfile`.
+- Files under `.github/workflows/` cannot be pushed through the GitHub connector (it lacks the
+  `workflow` permission); commit workflow changes through the GitHub web editor instead.
 - Keep pure logic (maths, rules, parsing) in small functions with unit tests next to them
   (`*.test.ts`).
 
