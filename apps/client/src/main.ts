@@ -56,6 +56,8 @@ async function start(): Promise<void> {
           z: game.player.position.z,
           grounded: game.player.grounded,
         }),
+        teleport: (x: number, y: number, z: number) =>
+          game.player.teleport(new THREE.Vector3(x, y, z)),
         camera: (yaw: number, pitch: number, distance: number) => {
           game.orbit.yaw = yaw;
           game.orbit.pitch = pitch;

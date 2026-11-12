@@ -1,0 +1,9 @@
+{
+  "id": "fog-town-lantern",
+  "name": "The Fog Town Lantern",
+  "mythology": "Unknown",
+  "model": "lantern",
+  "island": "Fog Town",
+  "order": 5,
+  "plaque": "Recovered from a town that does not appear on any map. The lantern has burned without fuel for the entire time it has been in the Archive. Its origin is unrecorded. Its date of recovery has been [REDACTED]."
+}
