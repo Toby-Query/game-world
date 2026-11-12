@@ -359,3 +359,44 @@
   margin: 0;
   align-self: center;
 }
+
+.tw-net {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  padding: 6px 12px 6px 26px;
+  border-radius: 999px;
+  background: rgba(11, 20, 32, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #e8f1ff;
+  font:
+    600 12px system-ui,
+    sans-serif;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+.tw-net::before {
+  content: '';
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: #e7b54a;
+}
+
+.tw-net[data-status='online']::before {
+  background: #3ee69a;
+  box-shadow: 0 0 8px #3ee69a;
+}
+
+.tw-net[data-status='offline']::before {
+  background: #ff4f6d;
+}
+
+body.tw-in-menu .tw-net {
+  display: none;
+}

@@ -22,6 +22,8 @@ export interface ShellOptions {
   saved: Appearance | null;
   /** Open the creator even for a returning player (?creator=1). */
   forceCreator: boolean;
+  /** Called each time the player enters the world, with the character they play. */
+  onEnterWorld?: (appearance: Appearance) => void;
 }
 
 const CONTROLS: [string, string][] = [
@@ -85,6 +87,7 @@ export class Shell {
     this.paused = false;
     this.game.setMenuOpen(false);
     this.game.setMode('play');
+    this.opts.onEnterWorld?.(this.opts.saved ?? DEFAULT_APPEARANCE);
   }
 
   private play(): void {
