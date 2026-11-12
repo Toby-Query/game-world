@@ -79,3 +79,130 @@
   color: rgba(232, 241, 255, 0.55);
   font-size: 12px;
 }
+
+.tw-creator {
+  position: fixed;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: min(380px, 42vw);
+  overflow-y: auto;
+  padding: 28px 28px 24px;
+  box-sizing: border-box;
+  background: linear-gradient(180deg, rgba(11, 20, 32, 0.94), rgba(22, 41, 74, 0.9));
+  border-right: 1px solid rgba(62, 230, 255, 0.35);
+  color: #e8f1ff;
+  font:
+    400 14px/1.5 system-ui,
+    sans-serif;
+}
+
+.tw-creator h1 {
+  margin: 0 0 4px;
+  font-size: 24px;
+  letter-spacing: 0.04em;
+}
+
+.tw-creator-intro {
+  margin: 0 0 18px;
+  color: #a9d8ff;
+}
+
+.tw-field {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.tw-field > span {
+  color: #a9d8ff;
+  font-size: 13px;
+}
+
+.tw-field input[type='text'],
+.tw-field input:not([type]) {
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(62, 230, 255, 0.4);
+  background: rgba(11, 20, 32, 0.8);
+  color: #e8f1ff;
+  font: inherit;
+}
+
+.tw-field input[type='range'] {
+  accent-color: #3ee6ff;
+}
+
+.tw-field input[type='color'] {
+  width: 44px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  background: none;
+}
+
+.tw-cycler {
+  display: grid;
+  grid-template-columns: 32px 1fr 32px;
+  align-items: center;
+  text-align: center;
+  font-weight: 600;
+}
+
+.tw-cycler button,
+.tw-swatch {
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid rgba(62, 230, 255, 0.4);
+  background: rgba(11, 20, 32, 0.8);
+  color: #3ee6ff;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.tw-swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.tw-swatch {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border-radius: 50%;
+}
+
+.tw-creator-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.tw-button {
+  flex: 1;
+  padding: 11px 16px;
+  border: none;
+  border-radius: 10px;
+  background: #3ee6ff;
+  color: #0b1420;
+  font:
+    700 15px system-ui,
+    sans-serif;
+  cursor: pointer;
+}
+
+.tw-button.secondary {
+  flex: 0 0 auto;
+  background: transparent;
+  color: #3ee6ff;
+  border: 1px solid rgba(62, 230, 255, 0.6);
+}
+
+.tw-button:hover {
+  filter: brightness(1.1);
+}

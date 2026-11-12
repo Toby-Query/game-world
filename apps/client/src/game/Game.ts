@@ -7,7 +7,7 @@ import { Hud } from '../ui/Hud';
 import { Input } from './input';
 import { Interactions } from './interact/Interactions';
 import type { Level, LevelContext } from './level/Level';
-import { FixedStep } from './player/movement';
+import { FixedStep, type MoveInput } from './player/movement';
 import { PlayerController } from './player/PlayerController';
 
 export interface GameOptions {
@@ -19,6 +19,7 @@ export interface GameOptions {
 }
 
 const PHYSICS_STEP = 1 / 60;
+const IDLE: MoveInput = { forward: 0, right: 0, sprint: false, jump: false };
 const FALL_LIMIT = -30;
 
 /** Owns the world simulation: physics, the local player, camera and the current level. */
@@ -38,6 +39,8 @@ export class Game {
   private readonly focus = new THREE.Vector3();
   private elapsed = 0;
   paused = false;
+  /** While true the player stands still facing the camera, framed for the character creator. */
+  private creatorMode = false;
 
   constructor(private readonly opts: GameOptions) {
     const { rapier, renderer } = opts;
@@ -67,6 +70,26 @@ export class Game {
     this.timer.connect(document);
   }
 
+  /** Frames the character for the creator: movement off, camera in front, character on the right. */
+  setCreatorMode(on: boolean): void {
+    this.creatorMode = on;
+    this.input.enabled = !on;
+    if (on) {
+      this.input.releasePointerLock();
+      this.orbit.yaw = Math.PI;
+      this.orbit.pitch = -0.08;
+      this.orbit.distance = 3.6;
+    } else {
+      this.orbit.yaw = 0;
+      this.orbit.pitch = -0.25;
+      this.orbit.distance = 6;
+    }
+  }
+
+  setAppearance(appearance: Appearance): void {
+    this.avatar.setAppearance(appearance);
+  }
+
   resize(width: number, height: number): void {
     this.opts.renderer.setSize(width, height, false);
     this.camera.aspect = width / height;
@@ -80,13 +103,16 @@ export class Game {
     this.elapsed += dt;
 
     if (!this.paused) {
-      const look = this.input.consumeLook();
-      this.orbit.look(look.dx, look.dy);
-      this.orbit.zoom(this.input.consumeWheel());
+      if (!this.creatorMode) {
+        const look = this.input.consumeLook();
+        this.orbit.look(look.dx, look.dy);
+        this.orbit.zoom(this.input.consumeWheel());
+      }
 
+      // Physics keeps running in the creator (with no input) so the character stays grounded.
       const rules = resolveZoneRules();
       const steps = this.fixed.advance(dt);
-      const move = this.input.move();
+      const move = this.creatorMode ? IDLE : this.input.move();
       for (let i = 0; i < steps; i++) {
         this.player.fixedUpdate(PHYSICS_STEP, move, this.orbit.yaw, rules);
         this.world.timestep = PHYSICS_STEP;
@@ -97,7 +123,9 @@ export class Game {
 
     this.player.update(this.fixed.alpha, dt);
     this.avatar.root.position.copy(this.player.position);
-    this.avatar.root.rotation.y = this.player.facing;
+    this.avatar.root.rotation.y = this.creatorMode
+      ? Math.sin(this.elapsed * 0.6) * 0.5
+      : this.player.facing;
     this.avatar.animate(
       dt,
       this.player.horizontalSpeed,
@@ -107,7 +135,9 @@ export class Game {
 
     this.updateInteractions();
 
-    this.focus.copy(this.player.position).y += 1.6;
+    this.focus.copy(this.player.position).y += this.creatorMode ? 1.1 : 1.6;
+    // In the creator the panel covers the left of the screen, so shift the character right.
+    if (this.creatorMode) this.focus.x += 1.1;
     this.orbit.update(this.focus, dt, this.player.collider);
     this.level.update?.({
       dt,
