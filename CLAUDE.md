@@ -29,6 +29,7 @@ Node 22, pnpm 10.
 | `pnpm lint`      | ESLint                                                            |
 | `pnpm typecheck` | TypeScript, strict                                                |
 | `pnpm format`    | Prettier                                                          |
+| `pnpm test:e2e`  | Headless smoke test of the built client (run `pnpm build` first)  |
 
 ## Conventions
 
@@ -40,6 +41,9 @@ Node 22, pnpm 10.
 - The server is the only authority over money, items, health and positions.
 - Desktop browsers only; touch devices get the gate screen in `apps/client/src/device.ts`.
 - `window.__THE_WORLD__.ready` is set once the client renders its first frame; smoke tests wait on it.
+  `?autostart=1` must always skip menus and drop straight into the world.
+- Without a GPU, run the smoke test with `CHROME_PATH=/path/to/chrome` to reuse an installed Chrome.
+- `pnpm-lock.yaml` is not committed yet (see `.gitignore`); CI installs with `--no-frozen-lockfile`.
 - Keep pure logic (maths, rules, parsing) in small functions with unit tests next to them
   (`*.test.ts`).
 
@@ -48,7 +52,8 @@ Node 22, pnpm 10.
 A PR is done when all of these hold:
 
 1. `pnpm typecheck`, `pnpm lint`, `pnpm test` and `pnpm build` pass.
-2. The client loads without console errors and renders (the smoke test, once #2 lands).
+2. `pnpm test:e2e` passes: the built client loads at `/?autostart=1`, renders, and logs no console
+   errors. CI (`.github/workflows/ci.yml`) runs all of this on every PR; merge only when CI is green.
 3. The PR description says what changed, how to try it locally, and includes a screenshot for
    anything visual.
 4. The PR references its issue (`Closes #N`).

@@ -9,3 +9,6 @@ test-results/
 !.env.example
 *.log
 .DS_Store
+# Not committed yet: the repo is pushed through the GitHub connector, which cannot carry it.
+# Re-add once direct git access is set up, then switch CI to --frozen-lockfile.
+pnpm-lock.yaml

@@ -4,13 +4,6 @@ import { GAME_TITLE } from '@the-world/shared';
 import { currentDevice, isDesktopDevice } from './device';
 import { createPlaceholderScene } from './scene';
 
-declare global {
-  interface Window {
-    /** Read by the smoke test to know the game booted. */
-    __THE_WORLD__?: { ready: boolean; backend: 'webgpu' | 'webgl' };
-  }
-}
-
 async function start(): Promise<void> {
   document.title = GAME_TITLE;
 
