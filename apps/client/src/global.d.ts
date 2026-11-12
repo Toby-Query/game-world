@@ -8,6 +8,8 @@ declare global {
       backend: 'webgpu' | 'webgl';
       /** Debug view of the local player, for automated tests. */
       player?: () => { x: number; y: number; z: number; grounded: boolean };
+      /** Renderer cost of the last frame, for performance budgets. */
+      stats?: () => { drawCalls: number; triangles: number };
     };
   }
 }

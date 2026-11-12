@@ -3,6 +3,7 @@ import RAPIER from '@dimforge/rapier3d-compat';
 import { GAME_TITLE } from '@the-world/shared';
 import { currentDevice, isDesktopDevice } from './device';
 import { Game } from './game/Game';
+import { buildArchiveLevel } from './game/level/archive/archiveLevel';
 import { buildTestLevel } from './game/level/testLevel';
 
 async function start(): Promise<void> {
@@ -34,7 +35,9 @@ async function start(): Promise<void> {
   if (label)
     label.textContent = `${backend} · click to look · WASD move · Shift sprint · Space jump`;
 
-  const game = new Game({ renderer, rapier: RAPIER, buildLevel: buildTestLevel });
+  const params = new URLSearchParams(location.search);
+  const buildLevel = params.get('level') === 'test' ? buildTestLevel : buildArchiveLevel;
+  const game = new Game({ renderer, rapier: RAPIER, buildLevel });
   const resize = (): void => game.resize(container.clientWidth, container.clientHeight);
   resize();
   window.addEventListener('resize', resize);
@@ -52,6 +55,10 @@ async function start(): Promise<void> {
           y: game.player.position.y,
           z: game.player.position.z,
           grounded: game.player.grounded,
+        }),
+        stats: () => ({
+          drawCalls: renderer.info.render.drawCalls,
+          triangles: renderer.info.render.triangles,
         }),
       };
     }
