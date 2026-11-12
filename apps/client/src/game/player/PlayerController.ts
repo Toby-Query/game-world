@@ -115,6 +115,8 @@ export class PlayerController {
     this.previous.copy(feet);
     this.position.copy(feet);
     this.motor.velocity = { x: 0, y: 0, z: 0 };
+    // Unknown until the next physics step settles us at the new spot.
+    this.motor.grounded = false;
   }
 
   dispose(): void {

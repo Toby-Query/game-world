@@ -43,11 +43,14 @@ async function jumpHeight(page: Page): Promise<number> {
   return peak - start.y;
 }
 
-async function standAt(page: Page, x: number, z: number): Promise<void> {
+async function standAt(page: Page, x: number, z: number, zone: string | null): Promise<void> {
   await page.evaluate(([px, pz]) => window.__THE_WORLD__?.teleport?.(px!, 0.1, pz!), [x, z]);
+  // Teleporting clears "grounded"; it returns after a physics step, which also updates the zone.
   await page.waitForFunction(
-    () => window.__THE_WORLD__?.player?.().grounded === true,
-    undefined,
+    (id) =>
+      window.__THE_WORLD__?.player?.().grounded === true &&
+      window.__THE_WORLD__?.zone?.().id === id,
+    zone,
     SLOW,
   );
 }
@@ -58,7 +61,7 @@ test('the Orbital Wing makes jumps floaty and leaving it restores gravity', asyn
   await page.waitForFunction(() => window.__THE_WORLD__?.ready === true, undefined, SLOW);
 
   // Inside the low-gravity hall, away from its platforms.
-  await standAt(page, 22.5, -22);
+  await standAt(page, 22.5, -22, 'orbital-wing');
   const inside = await world(page);
   expect(inside.id).toBe('orbital-wing');
   expect(inside.gravityY).toBeGreaterThan(-3);
@@ -66,7 +69,7 @@ test('the Orbital Wing makes jumps floaty and leaving it restores gravity', asyn
   const floaty = await jumpHeight(page);
 
   // Back in the museum, normal gravity.
-  await standAt(page, 10, -22);
+  await standAt(page, 10, -22, null);
   const outside = await world(page);
   expect(outside.id).toBeNull();
   expect(outside.gravityY).toBeCloseTo(-9.81);
