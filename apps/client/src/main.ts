@@ -56,6 +56,11 @@ async function start(): Promise<void> {
           z: game.player.position.z,
           grounded: game.player.grounded,
         }),
+        camera: (yaw: number, pitch: number, distance: number) => {
+          game.orbit.yaw = yaw;
+          game.orbit.pitch = pitch;
+          game.orbit.distance = distance;
+        },
         stats: () => ({
           drawCalls: renderer.info.render.drawCalls,
           triangles: renderer.info.render.triangles,

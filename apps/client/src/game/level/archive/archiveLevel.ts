@@ -1,11 +1,13 @@
 import * as THREE from 'three/webgpu';
 import { Environment } from '../../environment/Environment';
+import { NewsNetwork } from '../../news/NewsNetwork';
 import { staticBox, staticCylinder } from '../builders';
 import type { Level, LevelContext } from '../Level';
 import { ARCHIVE, towerPlacements } from './layout';
 
 export interface ArchiveLevel extends Level {
   environment: Environment;
+  news: NewsNetwork;
 }
 
 /**
@@ -17,17 +19,22 @@ export function buildArchiveLevel(ctx: LevelContext): ArchiveLevel {
   const environment = new Environment(ctx.scene, ARCHIVE.oceanLevel);
   const mat = materials(environment);
 
+  const news = new NewsNetwork(ctx.scene);
+
   buildPlaza(ctx, mat);
   buildMuseum(ctx, mat);
-  buildTowers(ctx, mat);
+  const towers = buildTowers(ctx, mat);
   buildPiers(ctx, mat);
+  buildNewsScreens(ctx, mat, news, towers);
 
   const s = ARCHIVE.spawn;
   return {
     spawn: new THREE.Vector3(s.x, s.y, s.z),
     environment,
+    news,
     update(frame) {
       environment.update(frame.dt, frame.elapsed, frame.camera, frame.playerPosition);
+      news.update(frame.elapsed);
     },
   };
 }
@@ -206,8 +213,8 @@ function buildMuseum(ctx: LevelContext, m: Materials): void {
   );
 }
 
-function buildTowers(ctx: LevelContext, m: Materials): void {
-  for (const t of towerPlacements()) {
+function buildTowers(ctx: LevelContext, m: Materials): THREE.Mesh[] {
+  return towerPlacements().map((t) => {
     const tower = staticBox(
       ctx,
       { x: t.size, y: t.height, z: t.size },
@@ -236,7 +243,42 @@ function buildTowers(ctx: LevelContext, m: Materials): void {
       band.position.y = y - t.height / 2;
       tower.add(band);
     }
-  }
+    return tower;
+  });
+}
+
+/**
+ * Screens on the plaza-facing side of every tower (the tallest gets a 16 m one), one above the
+ * museum entrance and a kiosk by the spawn point.
+ */
+function buildNewsScreens(
+  ctx: LevelContext,
+  m: Materials,
+  news: NewsNetwork,
+  towers: THREE.Mesh[],
+): void {
+  const placements = towerPlacements();
+  const tallest = Math.max(...placements.map((t) => t.height));
+  placements.forEach((t, i) => {
+    const tower = towers[i];
+    if (!tower) return;
+    const giant = t.height === tallest;
+    const width = giant ? 16 : t.size * 0.9;
+    const height = (width * 9) / 16;
+    // Tower meshes are centred at half their height; their local -Z face looks at the plaza.
+    const worldY = (giant ? 16 : 7) + height / 2;
+    const y = worldY - t.height / 2;
+    news.addScreen(width, height, { x: 0, y, z: -(t.size / 2 + 0.3) }, Math.PI, tower);
+  });
+
+  const museum = ARCHIVE.museum;
+  const front = museum.centre.z + museum.depth / 2;
+  news.addScreen(10, 5.6, { x: museum.centre.x, y: museum.height + 3.8, z: front + 2.6 }, 0);
+
+  // Kiosk near the spawn, angled toward arriving players.
+  const kiosk = { x: -7, z: ARCHIVE.spawn.z - 6 };
+  staticBox(ctx, { x: 0.4, y: 2, z: 0.4 }, { x: kiosk.x, y: 1, z: kiosk.z }, m.trim);
+  news.addScreen(3.2, 1.8, { x: kiosk.x, y: 2.9, z: kiosk.z }, Math.PI / 5);
 }
 
 function buildPiers(ctx: LevelContext, m: Materials): void {
