@@ -1,10 +1,12 @@
 import * as THREE from 'three/webgpu';
 import RAPIER from '@dimforge/rapier3d-compat';
-import { GAME_TITLE } from '@the-world/shared';
+import { DEFAULT_APPEARANCE, GAME_TITLE } from '@the-world/shared';
 import { currentDevice, isDesktopDevice } from './device';
+import { loadAppearance, saveAppearance } from './game/character/characterStore';
 import { Game } from './game/Game';
 import { buildArchiveLevel } from './game/level/archive/archiveLevel';
 import { buildTestLevel } from './game/level/testLevel';
+import { CharacterCreator } from './ui/CharacterCreator';
 
 async function start(): Promise<void> {
   document.title = GAME_TITLE;
@@ -37,7 +39,28 @@ async function start(): Promise<void> {
 
   const params = new URLSearchParams(location.search);
   const buildLevel = params.get('level') === 'test' ? buildTestLevel : buildArchiveLevel;
-  const game = new Game({ renderer, rapier: RAPIER, buildLevel });
+  const saved = loadAppearance();
+  const game = new Game({
+    renderer,
+    rapier: RAPIER,
+    buildLevel,
+    appearance: saved ?? DEFAULT_APPEARANCE,
+  });
+
+  // New players (or ?creator=1) create a character first; ?autostart=1 skips straight in.
+  const showCreator = !params.has('autostart') && (saved === null || params.has('creator'));
+  if (showCreator) {
+    game.setCreatorMode(true);
+    const creator = new CharacterCreator({
+      initial: saved ?? DEFAULT_APPEARANCE,
+      onChange: (appearance) => game.setAppearance(appearance),
+      onDone: (appearance) => {
+        saveAppearance(appearance);
+        creator.close();
+        game.setCreatorMode(false);
+      },
+    });
+  }
   const resize = (): void => game.resize(container.clientWidth, container.clientHeight);
   resize();
   window.addEventListener('resize', resize);
