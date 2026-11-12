@@ -100,6 +100,28 @@ describe('stepMotor', () => {
     for (let i = 0; i < 600; i++) stepMotor(state, { ...base, input: idle });
     expect(state.velocity.y).toBeCloseTo(-MOVEMENT.maxFallSpeed);
   });
+
+  it('jumps much higher and hangs longer in low gravity', () => {
+    const apex = (gravityY: number, airDrag: number): { height: number; time: number } => {
+      const state = createMotorState();
+      state.grounded = true;
+      stepMotor(state, { ...base, gravityY, airDrag, input: { ...idle, jump: true } });
+      state.grounded = false;
+      let height = 0;
+      let time = 0;
+      while (state.velocity.y > 0) {
+        height += state.velocity.y * dt;
+        time += dt;
+        stepMotor(state, { ...base, gravityY, airDrag, input: idle });
+      }
+      return { height, time };
+    };
+    const normal = apex(-9.81, 0.01);
+    const low = apex(-2.4, 0.15);
+    expect(normal.height).toBeCloseTo(1.96, 0);
+    expect(low.height).toBeGreaterThan(normal.height * 2.5);
+    expect(low.time).toBeGreaterThan(normal.time * 3);
+  });
 });
 
 describe('FixedStep', () => {

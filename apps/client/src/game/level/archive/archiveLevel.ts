@@ -5,6 +5,8 @@ import { NewsNetwork } from '../../news/NewsNetwork';
 import { staticBox, staticCylinder } from '../builders';
 import type { Level, LevelContext } from '../Level';
 import { ARCHIVE, towerPlacements } from './layout';
+import { buildOrbitalWing } from './orbitalWing';
+import { zonesForLevel } from '../zones';
 
 export interface ArchiveLevel extends Level {
   environment: Environment;
@@ -29,10 +31,17 @@ export function buildArchiveLevel(ctx: LevelContext): ArchiveLevel {
   buildPiers(ctx, mat);
   buildNewsScreens(ctx, mat, news, towers);
   const exhibits = buildExhibitHall(ctx, exhibitSlots(), ARCHIVE.museum.centre.z);
+  const zones = zonesForLevel('archive');
+  const wing = buildOrbitalWing(
+    ctx,
+    mat,
+    zones.find((z) => z.id === 'orbital-wing'),
+  );
 
   const s = ARCHIVE.spawn;
   return {
     spawn: new THREE.Vector3(s.x, s.y, s.z),
+    zones,
     environment,
     news,
     exhibits,
@@ -40,6 +49,7 @@ export function buildArchiveLevel(ctx: LevelContext): ArchiveLevel {
       environment.update(frame.dt, frame.elapsed, frame.camera, frame.playerPosition);
       news.update(frame.elapsed);
       exhibits.update(frame.elapsed);
+      wing.update(frame.elapsed);
     },
   };
 }
@@ -192,7 +202,7 @@ function buildMuseum(ctx: LevelContext, m: Materials): void {
   frame.position.set(cx, doorHeight + 0.15, front + wall / 2 + 0.1);
   ctx.scene.add(frame);
 
-  // Annex shell (fitted out as the low-gravity hall in #10).
+  // Annex shell; its interior is the Orbital Wing (orbitalWing.ts).
   const ax = annex.centre.x;
   const az = annex.centre.z;
   const aRight = ax + annex.width / 2;
