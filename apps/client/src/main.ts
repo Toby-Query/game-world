@@ -2,11 +2,16 @@ import * as THREE from 'three/webgpu';
 import RAPIER from '@dimforge/rapier3d-compat';
 import { DEFAULT_APPEARANCE, GAME_TITLE } from '@the-world/shared';
 import { currentDevice, isDesktopDevice } from './device';
-import { loadAppearance, saveAppearance } from './game/character/characterStore';
+import { loadAppearance } from './game/character/characterStore';
 import { Game } from './game/Game';
 import { buildArchiveLevel } from './game/level/archive/archiveLevel';
 import { buildTestLevel } from './game/level/testLevel';
-import { CharacterCreator } from './ui/CharacterCreator';
+import { loadSettings, qualityProfile } from './settings/settings';
+import { LoadingScreen } from './ui/LoadingScreen';
+import { Shell } from './ui/Shell';
+import { Sound } from './ui/sound';
+
+const nextFrame = (): Promise<void> => new Promise((r) => requestAnimationFrame(() => r()));
 
 async function start(): Promise<void> {
   document.title = GAME_TITLE;
@@ -20,11 +25,16 @@ async function start(): Promise<void> {
   const container = document.getElementById('app');
   if (!container) throw new Error('Missing #app container');
 
+  const loading = new LoadingScreen();
+  const settings = loadSettings();
+
+  loading.set(0.1, 'Waking the physics engine');
   await RAPIER.init();
 
   // WebGPURenderer uses WebGPU when available and falls back to WebGL 2 otherwise.
+  loading.set(0.3, 'Starting the renderer');
   const renderer = new THREE.WebGPURenderer({ antialias: true });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(qualityProfile(settings.quality, window.devicePixelRatio).pixelRatio);
   renderer.shadowMap.enabled = true;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   await renderer.init();
@@ -37,6 +47,8 @@ async function start(): Promise<void> {
   if (label)
     label.textContent = `${backend} · click to look · WASD move · Shift sprint · Space jump`;
 
+  loading.set(0.5, 'Raising the Archive');
+  await nextFrame();
   const params = new URLSearchParams(location.search);
   const buildLevel = params.get('level') === 'test' ? buildTestLevel : buildArchiveLevel;
   const saved = loadAppearance();
@@ -46,30 +58,37 @@ async function start(): Promise<void> {
     buildLevel,
     appearance: saved ?? DEFAULT_APPEARANCE,
   });
-
-  // New players (or ?creator=1) create a character first; ?autostart=1 skips straight in.
-  const showCreator = !params.has('autostart') && (saved === null || params.has('creator'));
-  if (showCreator) {
-    game.setCreatorMode(true);
-    const creator = new CharacterCreator({
-      initial: saved ?? DEFAULT_APPEARANCE,
-      onChange: (appearance) => game.setAppearance(appearance),
-      onDone: (appearance) => {
-        saveAppearance(appearance);
-        creator.close();
-        game.setCreatorMode(false);
-      },
-    });
-  }
+  game.applySettings(settings);
   const resize = (): void => game.resize(container.clientWidth, container.clientHeight);
   resize();
   window.addEventListener('resize', resize);
 
+  loading.set(0.75, 'Compiling shaders');
+  await nextFrame();
+  try {
+    await renderer.compileAsync(game.scene, game.camera);
+  } catch {
+    // Not fatal: anything left compiles on first draw.
+  }
+
+  const shell = new Shell({
+    game,
+    settings,
+    sound: new Sound(settings.volume),
+    saved,
+    forceCreator: params.has('creator'),
+  });
+  // ?autostart=1 skips every menu (automated tests, quick iteration).
+  if (params.has('autostart')) shell.enterWorld();
+  else shell.showTitle();
+
+  loading.set(1, 'Ready');
   let first = true;
   await renderer.setAnimationLoop((time) => {
     game.frame(time);
     if (first) {
       first = false;
+      loading.hide();
       window.__THE_WORLD__ = {
         ready: true,
         backend,
@@ -103,4 +122,5 @@ start().catch((error: unknown) => {
   console.error('The World failed to start', error);
   const label = document.getElementById('renderer-label');
   if (label) label.textContent = 'failed to start — see console';
+  document.getElementById('loading')?.classList.add('failed');
 });

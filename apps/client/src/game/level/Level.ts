@@ -1,6 +1,7 @@
 import type * as THREE from 'three/webgpu';
 import type RAPIER from '@dimforge/rapier3d-compat';
 import type { ZoneVolume } from '@the-world/shared';
+import type { QualityProfile } from '../../settings/settings';
 import type { Hud } from '../../ui/Hud';
 import type { Interactions } from '../interact/Interactions';
 
@@ -28,4 +29,6 @@ export interface Level {
   /** Physics zones placed in this level (from `content/zones/`). */
   zones?: readonly ZoneVolume[];
   update?(frame: LevelFrame): void;
+  /** Applies a graphics quality level (shadows and similar). */
+  setQuality?(profile: QualityProfile): void;
 }

@@ -10,8 +10,7 @@ export class Input {
   private lookDX = 0;
   private lookDY = 0;
   private wheel = 0;
-  /** Set false while a menu or text box has focus, so typing does not move the player. */
-  enabled = true;
+  private on = true;
 
   constructor(private readonly canvas: HTMLElement) {
     window.addEventListener('keydown', this.onKeyDown);
@@ -20,6 +19,21 @@ export class Input {
     document.addEventListener('mousemove', this.onMouseMove);
     canvas.addEventListener('wheel', this.onWheel, { passive: true });
     canvas.addEventListener('click', this.onClick);
+  }
+
+  /** False while a menu or text box has focus, so typing does not move the player. */
+  get enabled(): boolean {
+    return this.on;
+  }
+
+  set enabled(value: boolean) {
+    if (value === this.on) return;
+    this.on = value;
+    // Drop keys pressed while disabled so they don't fire when control returns.
+    this.pressed.clear();
+    this.down.clear();
+    this.lookDX = this.lookDY = this.wheel = 0;
+    if (!value) this.releasePointerLock();
   }
 
   get pointerLocked(): boolean {
