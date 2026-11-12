@@ -38,16 +38,16 @@ New tickets use the issue form in `.github/ISSUE_TEMPLATE/feature.yml`.
 
 Node 22, pnpm 10.
 
-| Command          | Does                                                              |
-| ---------------- | ----------------------------------------------------------------- |
-| `pnpm install`   | Install everything                                                |
-| `pnpm dev`       | Client on http://localhost:5173 and server on ws://localhost:2567 |
-| `pnpm build`     | Typecheck and build all packages                                  |
-| `pnpm test`      | Unit tests (Vitest)                                               |
-| `pnpm lint`      | ESLint                                                            |
-| `pnpm typecheck` | TypeScript, strict                                                |
-| `pnpm format`    | Prettier                                                          |
-| `pnpm test:e2e`  | Headless smoke test of the built client (run `pnpm build` first)  |
+| Command          | Does                                                                |
+| ---------------- | ------------------------------------------------------------------- |
+| `pnpm install`   | Install everything                                                  |
+| `pnpm dev`       | Client on http://localhost:5173 and server on ws://localhost:2567   |
+| `pnpm build`     | Typecheck and build all packages                                    |
+| `pnpm test`      | Unit tests (Vitest)                                                 |
+| `pnpm lint`      | ESLint                                                              |
+| `pnpm typecheck` | TypeScript, strict                                                  |
+| `pnpm format`    | Prettier                                                            |
+| `pnpm test:e2e`  | Headless browser tests of the built client and server (build first) |
 
 ## Conventions
 
@@ -59,7 +59,12 @@ Node 22, pnpm 10.
 - The server is the only authority over money, items, health and positions.
 - Desktop browsers only; touch devices get the gate screen in `apps/client/src/device.ts`.
 - `window.__THE_WORLD__.ready` is set once the client renders its first frame; smoke tests wait on it.
-  `?autostart=1` must always skip menus and drop straight into the world.
+  `?autostart=1` must always skip menus and drop straight into the world. `?offline=1` plays without
+  the server (single-player e2e tests use it so other players and server corrections can't interfere).
+- The client reads the server URL from `VITE_SERVER_URL` (see `apps/client/.env.example`), defaulting
+  to `ws://<page host>:2567`. The server answers `GET /health`.
+- Network messages and their validation live in `packages/shared/src/net.ts`; the server checks every
+  move (`checkMove`) and only sends each player the others within `NET.interestRadius`.
 - Without a GPU, run the smoke test with `CHROME_PATH=/path/to/chrome` to reuse an installed Chrome.
 - `pnpm-lock.yaml` is not committed yet (see `.gitignore`); CI installs with `--no-frozen-lockfile`.
 - Files under `.github/workflows/` cannot be pushed through the GitHub connector (it lacks the

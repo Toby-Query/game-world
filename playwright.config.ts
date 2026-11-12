@@ -1,7 +1,8 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Smoke tests run against the production build of the client (`vite preview`).
+ * End-to-end tests run against the production builds: the client (`vite preview`) and the game
+ * server (`node dist/index.js`), so run `pnpm build` first.
  * Chromium renders with SwiftShader so the tests work on machines without a GPU (CI runners).
  * Set CHROME_PATH to use an already-installed Chrome instead of Playwright's bundled browser.
  */
@@ -32,10 +33,19 @@ export default defineConfig({
       },
     },
   ],
-  webServer: {
-    command: 'pnpm --filter @the-world/client preview --port 4173 --strictPort',
-    url: 'http://localhost:4173',
-    reuseExistingServer: !process.env.CI,
-    timeout: 60_000,
-  },
+  webServer: [
+    {
+      command: 'pnpm --filter @the-world/client preview --port 4173 --strictPort',
+      url: 'http://localhost:4173',
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+    },
+    {
+      // The built game server; the client connects to ws://localhost:2567 by default.
+      command: 'pnpm --filter @the-world/server start',
+      url: 'http://localhost:2567/health',
+      reuseExistingServer: !process.env.CI,
+      timeout: 60_000,
+    },
+  ],
 });

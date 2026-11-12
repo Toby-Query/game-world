@@ -16,6 +16,7 @@
     "@colyseus/ws-transport": "^0.18.5"
   },
   "devDependencies": {
+    "@colyseus/sdk": "0.18.10",
     "@the-world/shared": "workspace:*",
     "@types/node": "^22.0.0",
     "esbuild": "^0.28.2",
