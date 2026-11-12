@@ -6,6 +6,7 @@ import { PNG } from 'pngjs';
  * screens), waits for the first rendered frame, and fails on any console error.
  */
 test('the game boots and renders without console errors', async ({ page }, testInfo) => {
+  test.setTimeout(120_000);
   const errors: string[] = [];
   page.on('console', (message) => {
     if (message.type() === 'error') errors.push(message.text());

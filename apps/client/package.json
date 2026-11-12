@@ -11,6 +11,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@colyseus/sdk": "0.18.10",
     "@dimforge/rapier3d-compat": "^0.21.0",
     "@the-world/shared": "workspace:*",
     "three": "^0.187.0"

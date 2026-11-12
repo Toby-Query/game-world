@@ -53,6 +53,12 @@ export class Game {
   paused = false;
   private mode: GameMode = 'play';
   private menuOpen = false;
+  /** Extra per-frame updates (networking, remote players), run before rendering. */
+  readonly systems: ((dt: number, elapsed: number) => void)[] = [];
+  /** Called when the player fell out of the world and was put back at the spawn. */
+  onRespawn: (() => void) | null = null;
+  /** Called after a debug teleport, so the server can follow. */
+  onTeleport: ((feet: THREE.Vector3) => void) | null = null;
 
   constructor(private readonly opts: GameOptions) {
     const { rapier, renderer } = opts;
@@ -157,7 +163,10 @@ export class Game {
         this.world.timestep = PHYSICS_STEP;
         this.world.step();
       }
-      if (this.player.position.y < FALL_LIMIT) this.player.teleport(this.level.spawn);
+      if (this.player.position.y < FALL_LIMIT) {
+        this.player.teleport(this.level.spawn);
+        this.onRespawn?.();
+      }
     }
 
     this.player.update(this.fixed.alpha, dt);
@@ -189,7 +198,15 @@ export class Game {
       camera: this.camera,
     });
 
+    for (const system of this.systems) system(dt, this.elapsed);
+
     this.opts.renderer.render(this.scene, this.camera);
+  }
+
+  /** Debug/test teleport (feet position); tells the server when connected. */
+  teleport(feet: THREE.Vector3): void {
+    this.player.teleport(feet);
+    this.onTeleport?.(feet);
   }
 
   /** Slow circle out over the sea, looking back at the Archive skyline (title screen). */
