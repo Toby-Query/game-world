@@ -86,6 +86,10 @@ async function start(): Promise<void> {
           game.orbit.pitch = pitch;
           game.orbit.distance = distance;
         },
+        zone: () => ({
+          id: game.zone?.id ?? null,
+          gravityY: game.rules.gravity.y,
+        }),
         stats: () => ({
           drawCalls: renderer.info.render.drawCalls,
           triangles: renderer.info.render.triangles,

@@ -1,5 +1,6 @@
 import type * as THREE from 'three/webgpu';
 import type RAPIER from '@dimforge/rapier3d-compat';
+import type { ZoneVolume } from '@the-world/shared';
 import type { Hud } from '../../ui/Hud';
 import type { Interactions } from '../interact/Interactions';
 
@@ -24,5 +25,7 @@ export interface LevelFrame {
 export interface Level {
   /** Where the player spawns (feet position). */
   spawn: THREE.Vector3;
+  /** Physics zones placed in this level (from `content/zones/`). */
+  zones?: readonly ZoneVolume[];
   update?(frame: LevelFrame): void;
 }

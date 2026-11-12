@@ -1,0 +1,14 @@
+{
+  "id": "orbital-wing",
+  "name": "Orbital Wing · low gravity",
+  "level": "archive",
+  "min": { "x": 17.4, "y": -3, "z": -27.6 },
+  "max": { "x": 27.6, "y": 14, "z": -16.4 },
+  "priority": 10,
+  "blend": 1.5,
+  "rules": {
+    "gravity": { "x": 0, "y": -2.4, "z": 0 },
+    "airDrag": 0.15,
+    "jumpMultiplier": 1
+  }
+}

@@ -77,6 +77,8 @@ export interface StepOptions {
   /** Gravity along Y in m/s^2 (negative pulls down). */
   gravityY: number;
   jumpMultiplier: number;
+  /** Fraction of vertical speed lost per second while airborne (zone air drag). */
+  airDrag?: number;
   /** Extra speed multiplier, e.g. from zones or powers. */
   speedMultiplier?: number;
 }
@@ -113,6 +115,7 @@ export function stepMotor(state: MotorState, opts: StepOptions): { jumped: boole
     v.y = -1; // keep a small downward push so slopes and steps stay snapped
   } else {
     v.y = Math.max(v.y + opts.gravityY * dt, -MOVEMENT.maxFallSpeed);
+    v.y *= Math.max(0, 1 - (opts.airDrag ?? 0) * dt);
   }
   return { jumped };
 }
