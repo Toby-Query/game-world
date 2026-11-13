@@ -1,4 +1,4 @@
-import type { Me } from '@the-world/shared';
+import type { LootBag, Me } from '@the-world/shared';
 
 export {};
 
@@ -28,10 +28,19 @@ declare global {
           z: number;
           /** What they are saying nearby (speech bubble), or ''. */
           bubble: string;
+          hp: number;
         }[];
       };
       /** The signed-in account (character, balance, inventory), or null for guests. */
       account?: () => Me | null;
+      /** Your health, whether you are dead, and the loot bags nearby. */
+      combat?: () => {
+        health: number;
+        dead: boolean;
+        loot: LootBag[];
+        deaths: number;
+        killedBy: string | null;
+      };
       /** Renderer cost of the last frame, for performance budgets. */
       stats?: () => { drawCalls: number; triangles: number };
     };

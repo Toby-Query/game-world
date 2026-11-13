@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { DEFAULT_APPEARANCE, INVENTORY_SLOTS, SEED_MONEY } from '@the-world/shared';
+import { DEFAULT_APPEARANCE, INVENTORY_SLOTS, SEED_MONEY, STARTER_KIT } from '@the-world/shared';
 import { connect } from '../db/connect';
 import type { Sql } from '../db/sql';
 import { AccountStore, InsufficientFunds } from './AccountStore';
@@ -29,6 +29,9 @@ describe('AccountStore', () => {
     expect(me.balance).toBe(SEED_MONEY);
     expect(me.character).toBeNull();
     expect(me.slots).toBe(INVENTORY_SLOTS);
+    expect(me.inventory.map((i) => [i.name, i.equipped])).toEqual(
+      STARTER_KIT.map((i) => [i.name, i.equipped]),
+    );
     expect(await store.ledger(me.playerId)).toEqual([
       { amount: SEED_MONEY, balanceAfter: SEED_MONEY, reason: 'seed money' },
     ]);
@@ -68,16 +71,18 @@ describe('AccountStore', () => {
 
   it('caps the inventory at the slot limit and reuses freed slots', async () => {
     const { me } = await signIn('eve@example.com');
+    const free = INVENTORY_SLOTS - STARTER_KIT.length;
     const items = [];
-    for (let i = 0; i < INVENTORY_SLOTS; i++) {
+    for (let i = 0; i < free; i++) {
       items.push(await store.addItem(me.playerId, { kind: 'shell', name: `Shell ${i}` }));
     }
     expect(items.every(Boolean)).toBe(true);
     expect(await store.addItem(me.playerId, { kind: 'shell', name: 'One too many' })).toBeNull();
 
-    expect(await store.removeItem(me.playerId, items[3]!.id)).toBe(true);
+    const freed = items[3]!;
+    expect(await store.removeItem(me.playerId, freed.id)).toBe(true);
     const again = await store.addItem(me.playerId, { kind: 'pearl', name: 'Pearl' });
-    expect(again?.slot).toBe(3);
+    expect(again?.slot).toBe(freed.slot);
   });
 
   it('ends sessions', async () => {

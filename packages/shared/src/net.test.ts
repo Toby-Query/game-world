@@ -5,6 +5,7 @@ import {
   checkMove,
   interpolatePose,
   parsePose,
+  placementOf,
   playersNear,
   sanitizeJoinOptions,
   type TimedPose,
@@ -100,5 +101,15 @@ describe('join options and cells', () => {
     expect(cellFor(0, 0)).toBe('0:0');
     expect(cellFor(30, -40)).toBe('0:0');
     expect(cellFor(600, 0)).toBe('1:0');
+  });
+});
+
+describe('placementOf', () => {
+  it('reads a whole, non-negative placement and defaults to 0', () => {
+    expect(placementOf({ placement: 3 })).toBe(3);
+    expect(placementOf({})).toBe(0);
+    expect(placementOf(null)).toBe(0);
+    expect(placementOf({ placement: -1 })).toBe(0);
+    expect(placementOf({ placement: 1.5 })).toBe(0);
   });
 });

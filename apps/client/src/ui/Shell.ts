@@ -34,7 +34,10 @@ const CONTROLS: [string, string][] = [
   ['Mouse', 'Look (click the world to capture the mouse)'],
   ['Space', 'Jump'],
   ['Shift', 'Sprint'],
-  ['E', 'Read, use, interact'],
+  ['E', 'Read, use, pick up loot'],
+  ['F / Left click', 'Melee attack'],
+  ['R / Right click', 'Ranged bolt'],
+  ['Q', 'Dodge (brief invulnerability)'],
   ['Wheel', 'Zoom the camera'],
   ['Esc', 'Pause menu and settings'],
 ];
@@ -340,6 +343,8 @@ export class Shell {
     if (document.pointerLockElement) return;
     this.lockLostAt = performance.now();
     if (this.game.currentMode !== 'play' || this.paused || this.game.textInputActive) return;
+    // Dying releases the mouse too; that is not a request to pause.
+    if (this.game.isDead) return;
     if (this.game.hud.panelOpen) {
       this.game.hud.closePanel();
     } else {

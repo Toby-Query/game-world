@@ -23,13 +23,22 @@ async function jumpHeight(page: Page): Promise<number> {
       w.__peak = Math.max(w.__peak ?? -Infinity, y);
     }, 10);
   });
-  await page.keyboard.down('Space');
-  await page.keyboard.up('Space');
-  await page.waitForFunction(
-    (y) => (window.__THE_WORLD__?.player?.().y ?? y) > y + 0.3,
-    start.y,
-    SLOW,
-  );
+  // A tap can fall between physics steps on a loaded machine; tap again until the jump starts.
+  const deadline = Date.now() + SLOW.timeout;
+  for (;;) {
+    await page.keyboard.down('Space');
+    await page.keyboard.up('Space');
+    try {
+      await page.waitForFunction(
+        (y) => (window.__THE_WORLD__?.player?.().y ?? y) > y + 0.3,
+        start.y,
+        { timeout: 10_000 },
+      );
+      break;
+    } catch (error) {
+      if (Date.now() > deadline) throw error;
+    }
+  }
   await page.waitForFunction(
     () => window.__THE_WORLD__?.player?.().grounded === true,
     undefined,

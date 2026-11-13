@@ -1,13 +1,16 @@
 import * as THREE from 'three/webgpu';
-import { MSG, NET, type Appearance, type Pose } from '@the-world/shared';
+import { MSG, NET, type Appearance, type MoveMessage, type Pose } from '@the-world/shared';
 import type { Game } from '../game/Game';
 import { ChatBox } from '../ui/ChatBox';
+import type { AccountClient } from './account';
+import { startCombat, type CombatState } from './combat';
 import { NetClient, type NetStatus } from './NetClient';
 import { RemotePlayers } from './RemotePlayers';
 
 export interface Multiplayer {
   readonly client: NetClient;
   readonly remotes: RemotePlayers;
+  readonly combat: CombatState;
 }
 
 /**
@@ -18,8 +21,9 @@ export function startMultiplayer(
   game: Game,
   url: string,
   appearance: Appearance,
-  session: string | null,
+  account: AccountClient | null,
 ): Multiplayer {
+  const session = account?.session ?? null;
   const remotes = new RemotePlayers(game.scene);
   const pill = statusPill();
   // Assigned just below; the chat box only calls it after the player presses Enter.
@@ -68,7 +72,8 @@ export function startMultiplayer(
     sinceSend += dt;
     if (sinceSend >= 1 / NET.tickRate) {
       sinceSend = 0;
-      net.send(MSG.move, pose(game));
+      const move: MoveMessage = { ...pose(game), placement: net.placement };
+      net.send(MSG.move, move);
     }
     sinceHud += dt;
     if (sinceHud > 0.5) {
@@ -77,9 +82,10 @@ export function startMultiplayer(
     }
   });
 
+  const combat = startCombat(game, net, remotes, account);
   renderStatus(pill, net.status, 0);
   void net.connect();
-  return { client: net, remotes };
+  return { client: net, remotes, combat };
 }
 
 function pose(game: Game): Pose {

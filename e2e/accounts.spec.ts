@@ -32,7 +32,7 @@ test('signing in on two browsers shows the same character and seed money', async
   await a.click('text=Enter the Archive');
   await a.getByTestId('controls-done').click(SLOW);
   await expect(a.getByTestId('wallet-balance')).toHaveText('◈ 100', SLOW);
-  await expect(a.getByTestId('wallet-bag')).toHaveText('Bag 0/20');
+  await expect(a.getByTestId('wallet-bag')).toHaveText('Bag 3/20');
   await a.waitForFunction(
     (n) => window.__THE_WORLD__?.account?.()?.character?.name === n,
     name,

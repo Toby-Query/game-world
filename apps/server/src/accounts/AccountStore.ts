@@ -4,6 +4,7 @@ import {
   LOGIN_LINK_MINUTES,
   SEED_MONEY,
   SESSION_DAYS,
+  STARTER_KIT,
   firstFreeSlot,
   sanitizeAppearance,
   type Appearance,
@@ -212,6 +213,12 @@ export class AccountStore {
     const id = rows[0]!.id;
     await tx.query('insert into wallets (player_id, balance) values ($1, 0)', [id]);
     await this.adjustBalance(id, SEED_MONEY, 'seed money', tx);
+    for (const [slot, item] of STARTER_KIT.entries()) {
+      await tx.query(
+        'insert into inventory (player_id, slot, kind, name, equipped) values ($1, $2, $3, $4, $5)',
+        [id, slot, item.kind, item.name, item.equipped],
+      );
+    }
     return id;
   }
 }

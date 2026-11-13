@@ -3,6 +3,13 @@ import type { Appearance } from './appearance';
 /** How many items a player can carry. Full bags force a sale (or a drop). */
 export const INVENTORY_SLOTS = 20;
 
+/** What every new player starts with besides their seed money: one equipped, two carried. */
+export const STARTER_KIT: readonly { kind: string; name: string; equipped: boolean }[] = [
+  { kind: 'weapon', name: 'Driftwood club', equipped: true },
+  { kind: 'tool', name: 'Salvage net', equipped: false },
+  { kind: 'trinket', name: 'Brass compass', equipped: false },
+];
+
 /** Minutes a sign-in link stays valid. */
 export const LOGIN_LINK_MINUTES = 15;
 

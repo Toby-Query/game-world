@@ -566,3 +566,90 @@ body.tw-in-menu .tw-wallet {
 body.tw-in-menu .tw-chat {
   display: none;
 }
+
+.tw-health {
+  position: fixed;
+  left: 24px;
+  top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #e8f1ff;
+  font:
+    700 13px system-ui,
+    sans-serif;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+.tw-health-track {
+  width: 220px;
+  height: 12px;
+  border-radius: 6px;
+  background: rgba(11, 20, 32, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+}
+
+.tw-health-track div {
+  height: 100%;
+  background: linear-gradient(90deg, #3ee69a, #9cf6c4);
+  transition: width 0.2s;
+}
+
+.tw-health-track div[data-low='true'] {
+  background: linear-gradient(90deg, #ff4f6d, #ff9aa9);
+}
+
+body.tw-in-menu .tw-health {
+  display: none;
+}
+
+.tw-damage {
+  position: fixed;
+  left: 0;
+  top: 0;
+  margin: -12px 0 0 -16px;
+  color: #fff3c4;
+  font:
+    800 22px system-ui,
+    sans-serif;
+  text-shadow:
+    0 2px 0 #7a4a00,
+    0 0 8px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+}
+
+.tw-damage.mine {
+  color: #ff8fa3;
+  text-shadow:
+    0 2px 0 #5a0013,
+    0 0 8px rgba(0, 0, 0, 0.6);
+}
+
+.tw-death {
+  position: fixed;
+  inset: 0;
+  z-index: 9;
+  display: grid;
+  place-content: center;
+  text-align: center;
+  background: radial-gradient(circle, rgba(60, 0, 12, 0.35), rgba(20, 0, 6, 0.75));
+  color: #ffe4e8;
+  font:
+    400 16px system-ui,
+    sans-serif;
+  pointer-events: none;
+}
+
+.tw-death[hidden] {
+  display: none;
+}
+
+.tw-death h2 {
+  margin: 0 0 8px;
+  font-size: 44px;
+  font-weight: 300;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+}

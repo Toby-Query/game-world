@@ -4,6 +4,7 @@ import {
   type Appearance,
   type AuthStartResponse,
   type AuthVerifyResponse,
+  type InventoryItem,
   type Me,
 } from '@the-world/shared';
 
@@ -61,6 +62,11 @@ export class AccountClient {
   async saveCharacter(appearance: Appearance): Promise<void> {
     if (!this.session) return;
     this.set(await this.request<Me>('PUT', API.character, { appearance }));
+  }
+
+  /** The server pushed a new inventory (pickup, death). */
+  setInventory(inventory: InventoryItem[]): void {
+    if (this.me) this.set({ ...this.me, inventory });
   }
 
   async signOut(): Promise<void> {
