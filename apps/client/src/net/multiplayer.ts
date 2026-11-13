@@ -1,5 +1,5 @@
 import * as THREE from 'three/webgpu';
-import { MSG, NET, type Appearance, type Pose } from '@the-world/shared';
+import { MSG, NET, type Appearance, type MoveMessage, type Pose } from '@the-world/shared';
 import type { Game } from '../game/Game';
 import { ChatBox } from '../ui/ChatBox';
 import type { AccountClient } from './account';
@@ -72,7 +72,8 @@ export function startMultiplayer(
     sinceSend += dt;
     if (sinceSend >= 1 / NET.tickRate) {
       sinceSend = 0;
-      net.send(MSG.move, pose(game));
+      const move: MoveMessage = { ...pose(game), placement: net.placement };
+      net.send(MSG.move, move);
     }
     sinceHud += dt;
     if (sinceHud > 0.5) {

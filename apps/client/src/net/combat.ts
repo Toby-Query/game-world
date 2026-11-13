@@ -126,6 +126,7 @@ export function startCombat(
 
   client.on<RespawnMessage>(MSG.respawned, (r) => {
     if (!isMe(r.id)) return;
+    client.placement = r.placement;
     state.dead = false;
     state.health = r.health;
     hud.setHealth(r.health);

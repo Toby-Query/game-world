@@ -37,6 +37,8 @@ export class NetClient {
   private closed = false;
   status: NetStatus = 'connecting';
   you: string | null = null;
+  /** The server's placement number for us, echoed in every move (see MoveMessage). */
+  placement = 0;
   private readonly listeners = new Map<string, ((message: never) => void)[]>();
 
   constructor(
@@ -82,6 +84,7 @@ export class NetClient {
     this.room = room;
     room.onMessage(MSG.welcome, (m: WelcomeMessage) => {
       this.you = m.you;
+      this.placement = 0;
       this.handlers.welcome(m);
       this.setStatus('online');
     });
