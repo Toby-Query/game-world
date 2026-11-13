@@ -17,6 +17,7 @@ import {
   maskProfanity,
   parseChatSend,
   parsePose,
+  placementOf,
   playersNear,
   sanitizeJoinOptions,
   type Appearance,
@@ -59,6 +60,8 @@ interface ServerPlayer extends Pose {
   cooldowns: Cooldowns;
   /** Recent positions (server time), so hits can be checked against what attackers saw. */
   history: Sample[];
+  /** Bumped on every respawn; moves carrying an older number are stale (see MoveMessage). */
+  placement: number;
 }
 
 /** Eye height above the feet, where ranged attacks start. */
@@ -144,6 +147,7 @@ export class ArchiveRoom extends Room {
       invulnerableUntil: 0,
       cooldowns: new Cooldowns(),
       history: [{ ...ARCHIVE_SPAWN, t: Date.now() }],
+      placement: 0,
     };
     this.players.set(client.sessionId, player);
     const welcome: WelcomeMessage = {
@@ -180,6 +184,8 @@ export class ArchiveRoom extends Room {
     const player = this.players.get(client.sessionId);
     const pose = parsePose(message);
     if (!player || !pose || player.dead) return;
+    // Sent before the client heard it was respawned: drop it rather than drag the player back.
+    if (placementOf(message) !== player.placement) return;
     const now = Date.now();
     const result = checkMove(player, pose, (now - player.lastMoveAt) / 1000);
     Object.assign(player, pose, result.position, { lastMoveAt: now });
@@ -341,8 +347,14 @@ export class ArchiveRoom extends Room {
     if (!this.players.has(player.id)) return;
     player.dead = false;
     player.health = COMBAT.maxHealth;
+    player.placement += 1;
     this.moveTo(player, ARCHIVE_SPAWN);
-    const message: RespawnMessage = { id: player.id, at: ARCHIVE_SPAWN, health: player.health };
+    const message: RespawnMessage = {
+      id: player.id,
+      at: ARCHIVE_SPAWN,
+      health: player.health,
+      placement: player.placement,
+    };
     this.broadcast(MSG.respawned, message);
   }
 

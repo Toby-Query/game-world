@@ -77,7 +77,19 @@ export interface Pose {
   vy: number;
 }
 
-export type MoveMessage = Pose;
+export interface MoveMessage extends Pose {
+  /**
+   * How many times the server has placed this player (respawns). Moves sent before the client
+   * heard about the latest placement are stale and dropped, so they can't drag the player back.
+   */
+  placement?: number;
+}
+
+/** The placement number in a move message (0 when missing or malformed). */
+export function placementOf(value: unknown): number {
+  const p = (value as { placement?: unknown } | null)?.placement;
+  return typeof p === 'number' && Number.isInteger(p) && p >= 0 ? p : 0;
+}
 
 export interface PlayerProfile {
   id: string;
