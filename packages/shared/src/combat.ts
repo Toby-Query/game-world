@@ -67,6 +67,8 @@ export interface RespawnMessage {
   id: string;
   at: Vec3;
   health: number;
+  /** The respawned player's new placement number (see MoveMessage.placement). */
+  placement: number;
 }
 
 const length = (v: Vec3): number => Math.hypot(v.x, v.y, v.z);
