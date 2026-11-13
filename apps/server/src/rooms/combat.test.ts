@@ -113,7 +113,18 @@ describe('PvP', () => {
       undefined,
       COMBAT.respawnSeconds * 1000 + 2000,
     );
-    expect(back).toMatchObject({ id: b.id, health: COMBAT.maxHealth });
+    expect(back).toMatchObject({ id: b.id, health: COMBAT.maxHealth, placement: 1 });
+
+    // A move B sent before hearing about the respawn (old placement, old spot) is ignored, not
+    // treated as a too-fast move that drags B away from the spawn.
+    const noCorrection = next(b.room, MSG.correction, undefined, 600).catch(() => null);
+    const stale = { x: 0, y: 0, z: 20.6, facing: 0, speed: 0, grounded: true, vy: 0 };
+    b.room.send(MSG.move, { ...stale, z: 12, placement: 0 });
+    expect(await noCorrection).toBeNull();
+    // Moves with the new placement are checked as usual.
+    const corrected = next(b.room, MSG.correction);
+    b.room.send(MSG.move, { ...stale, z: 12, placement: 1 });
+    expect(await corrected).toBeTruthy();
 
     await a.room.leave();
     await b.room.leave();
