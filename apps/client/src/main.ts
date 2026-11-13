@@ -114,7 +114,7 @@ async function start(): Promise<void> {
     // Join the server the first time the player enters the world (?offline=1 plays alone).
     onEnterWorld: (appearance) => {
       if (!multiplayer && !offline) {
-        multiplayer = startMultiplayer(game, serverUrl, appearance, account?.session ?? null);
+        multiplayer = startMultiplayer(game, serverUrl, appearance, account);
       }
     },
   });
@@ -154,6 +154,13 @@ async function start(): Promise<void> {
           remotes: multiplayer?.remotes.visible() ?? [],
         }),
         account: () => account?.me ?? null,
+        combat: () => ({
+          health: multiplayer?.combat.health ?? 0,
+          dead: multiplayer?.combat.dead ?? false,
+          loot: multiplayer?.combat.loot ?? [],
+          deaths: multiplayer?.combat.deaths ?? 0,
+          killedBy: multiplayer?.combat.killedBy ?? null,
+        }),
         stats: () => ({
           drawCalls: renderer.info.render.drawCalls,
           triangles: renderer.info.render.triangles,

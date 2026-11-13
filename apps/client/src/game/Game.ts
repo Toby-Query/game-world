@@ -62,6 +62,8 @@ export class Game {
   onTeleport: ((feet: THREE.Vector3) => void) | null = null;
   /** True while a text box (chat) has the keyboard: menus and Esc leave it alone. */
   textInputActive = false;
+  /** While dead the player can't move or act (they still see the world). */
+  private dead = false;
   /** What the local player last said nearby. */
   readonly bubble = new SpeechBubble(2.3);
 
@@ -124,7 +126,17 @@ export class Game {
   }
 
   private updateInputEnabled(): void {
-    this.input.enabled = this.mode === 'play' && !this.menuOpen;
+    this.input.enabled = this.mode === 'play' && !this.menuOpen && !this.dead;
+  }
+
+  setDead(dead: boolean): void {
+    this.dead = dead;
+    this.avatar.setDead(dead);
+    this.updateInputEnabled();
+  }
+
+  get isDead(): boolean {
+    return this.dead;
   }
 
   applySettings(settings: Settings): void {
