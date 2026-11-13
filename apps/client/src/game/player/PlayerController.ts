@@ -23,6 +23,8 @@ export class PlayerController {
   readonly position = new THREE.Vector3();
   /** Yaw the character model faces (radians). */
   facing = 0;
+  /** A dodge dash in progress: fixed horizontal velocity for a short time. */
+  private dash = { x: 0, z: 0, seconds: 0 };
 
   constructor(
     rapier: typeof RAPIER,
@@ -78,6 +80,11 @@ export class PlayerController {
     });
 
     const v = this.motor.velocity;
+    if (this.dash.seconds > 0) {
+      this.dash.seconds -= scaledDt;
+      v.x = this.dash.x;
+      v.z = this.dash.z;
+    }
     this.controller.computeColliderMovement(this.collider, {
       x: v.x * scaledDt,
       y: v.y * scaledDt,
@@ -106,6 +113,12 @@ export class PlayerController {
     let delta = this.targetFacing - this.facing;
     delta = Math.atan2(Math.sin(delta), Math.cos(delta));
     this.facing += delta * Math.min(1, dt * 12);
+  }
+
+  /** Dashes along the ground direction (x, z) at `speed` m/s for `seconds` (dodge). */
+  startDash(x: number, z: number, speed: number, seconds: number): void {
+    const len = Math.hypot(x, z) || 1;
+    this.dash = { x: (x / len) * speed, z: (z / len) * speed, seconds };
   }
 
   /** Moves the player instantly (spawns, respawns, teleports). */

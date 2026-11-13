@@ -39,3 +39,23 @@ describe('Interactions', () => {
     expect(onFocusChange).toHaveBeenLastCalledWith(null);
   });
 });
+
+describe('Interactions.remove', () => {
+  it('forgets an item and clears the prompt if it was focused', () => {
+    const interactions = new Interactions();
+    const focus: (string | null)[] = [];
+    interactions.onFocusChange = (item) => focus.push(item?.id ?? null);
+    interactions.add({
+      id: 'bag',
+      position: { x: 0, y: 0, z: 0 },
+      radius: 2,
+      prompt: 'Loot',
+      onInteract() {},
+    });
+    interactions.update({ x: 0, y: 0, z: 1 });
+    interactions.remove('bag');
+    interactions.update({ x: 0, y: 0, z: 1 });
+    expect(focus).toEqual(['bag', null]);
+    expect(interactions.interact()).toBe(false);
+  });
+});

@@ -44,6 +44,16 @@ export class Interactions {
     this.items.push(item);
   }
 
+  /** Removes an interactable (e.g. a loot bag someone picked up). */
+  remove(id: string): void {
+    const i = this.items.findIndex((item) => item.id === id);
+    if (i >= 0) this.items.splice(i, 1);
+    if (this.focused?.id === id) {
+      this.focused = null;
+      this.onFocusChange(null);
+    }
+  }
+
   get current(): Interactable | null {
     return this.focused;
   }

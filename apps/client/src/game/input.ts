@@ -19,6 +19,8 @@ export class Input {
     document.addEventListener('mousemove', this.onMouseMove);
     canvas.addEventListener('wheel', this.onWheel, { passive: true });
     canvas.addEventListener('click', this.onClick);
+    canvas.addEventListener('mousedown', this.onMouseDown);
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
   }
 
   /** False while a menu or text box has focus, so typing does not move the player. */
@@ -94,6 +96,7 @@ export class Input {
     document.removeEventListener('mousemove', this.onMouseMove);
     this.canvas.removeEventListener('wheel', this.onWheel);
     this.canvas.removeEventListener('click', this.onClick);
+    this.canvas.removeEventListener('mousedown', this.onMouseDown);
   }
 
   private readonly onKeyDown = (e: KeyboardEvent): void => {
@@ -119,6 +122,11 @@ export class Input {
 
   private readonly onWheel = (e: WheelEvent): void => {
     this.wheel += Math.sign(e.deltaY);
+  };
+
+  /** Mouse buttons count as presses ("Mouse0", "Mouse2") once the mouse is captured. */
+  private readonly onMouseDown = (e: MouseEvent): void => {
+    if (this.enabled && this.pointerLocked) this.pressed.add(`Mouse${e.button}`);
   };
 
   private readonly onClick = (): void => {
