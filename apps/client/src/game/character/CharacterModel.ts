@@ -1,6 +1,9 @@
 import * as THREE from 'three/webgpu';
 import { DEFAULT_APPEARANCE, type Appearance } from '@the-world/shared';
 
+const SWING_SECONDS = 0.35;
+const FLASH_SECONDS = 0.25;
+
 interface Limb {
   pivot: THREE.Group;
   lower: THREE.Group;
@@ -41,6 +44,12 @@ export class CharacterModel {
   private phase = 0;
   private time = 0;
   private lean = 0;
+  /** Seconds left of an attack animation, and which. */
+  private swingTime = 0;
+  private swingKind: 'melee' | 'ranged' = 'melee';
+  /** Seconds left of the red hit flash. */
+  private flashTime = 0;
+  private dead = false;
 
   constructor(appearance: Appearance = DEFAULT_APPEARANCE) {
     const m = this.materials;
@@ -171,9 +180,54 @@ export class CharacterModel {
       this.torso.position.y = 0.95;
     }
 
+    // Attack: the right arm sweeps across (melee) or points the bolt forward (ranged).
+    if (this.swingTime > 0) {
+      this.swingTime = Math.max(0, this.swingTime - dt);
+      if (this.swingKind === 'melee') {
+        const k = 1 - this.swingTime / SWING_SECONDS;
+        armR.pivot.rotation.x = -2.4 + k * 2.9;
+        armR.pivot.rotation.z = 0.5 - k * 0.9;
+      } else {
+        armR.pivot.rotation.x = -Math.PI / 2;
+        armR.pivot.rotation.z = 0;
+        armR.lower.rotation.x = 0;
+      }
+    }
+
+    if (this.flashTime > 0) {
+      this.flashTime = Math.max(0, this.flashTime - dt);
+      const k = this.flashTime / FLASH_SECONDS;
+      for (const m of [this.materials.skin, this.materials.outfit]) {
+        m.emissive.setRGB(0.9 * k, 0.05 * k, 0.05 * k);
+      }
+    }
+
+    if (this.dead) {
+      // Lying on the ground; the pose is held while dead.
+      this.body.rotation.x = Math.min(Math.PI / 2, this.body.rotation.x + dt * 6);
+      return;
+    }
+    this.body.rotation.x = Math.max(0, this.body.rotation.x - dt * 6);
+
     const targetLean = grounded ? stride * 0.18 : 0.05;
     this.lean += (targetLean - this.lean) * Math.min(1, dt * 8);
     this.torso.rotation.x = -this.lean;
+  }
+
+  /** Plays an attack animation. */
+  swing(kind: 'melee' | 'ranged'): void {
+    this.swingKind = kind;
+    this.swingTime = SWING_SECONDS;
+  }
+
+  /** Flashes red briefly: this character was hit. */
+  flash(): void {
+    this.flashTime = FLASH_SECONDS;
+  }
+
+  /** Falls over (dead) or gets back up. */
+  setDead(dead: boolean): void {
+    this.dead = dead;
   }
 
   private makeTop(jacket: boolean, robe: boolean): THREE.Group {
