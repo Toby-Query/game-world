@@ -27,6 +27,29 @@ async function player(browser: Browser, name: string, email: string): Promise<Pa
   return page;
 }
 
+/**
+ * Presses `key` on the attacker until `landed` holds on the target. A press that comes too soon
+ * after the last one is dropped by the attack cooldown (fast browsers), so it is retried.
+ */
+async function strike(
+  attacker: Page,
+  target: Page,
+  key: string,
+  landed: (arg: number) => boolean,
+  arg: number,
+): Promise<void> {
+  const deadline = Date.now() + SLOW.timeout;
+  for (;;) {
+    await attacker.keyboard.press(key);
+    try {
+      await target.waitForFunction(landed, arg, { timeout: 10_000 });
+      return;
+    } catch (error) {
+      if (Date.now() > deadline) throw error;
+    }
+  }
+}
+
 const health = (page: Page) => page.evaluate(() => window.__THE_WORLD__?.combat?.().health ?? -1);
 const bag = (page: Page) =>
   page.evaluate(() => window.__THE_WORLD__?.account?.()?.inventory.map((i) => i.name) ?? []);
@@ -39,29 +62,31 @@ test('two players fight: one dies, loot drops and is picked up, the loser respaw
   const a = await player(browser, `Ares ${id}`, `ares-${id}@example.com`);
   const b = await player(browser, `Bia ${id}`, `bia-${id}@example.com`);
 
-  // A at the spawn looking down -Z; B a step in front of A.
-  await a.evaluate(() => window.__THE_WORLD__?.teleport?.(0, 0, 22));
-  await b.evaluate(() => window.__THE_WORLD__?.teleport?.(0, 0, 20.6));
+  // A looking down -Z, B a step in front of A, both away from the spawn: B respawns there, out of
+  // A's reach, and players from other tests standing there stay out of the fight.
+  await a.evaluate(() => window.__THE_WORLD__?.teleport?.(0, 0, 16));
+  await b.evaluate(() => window.__THE_WORLD__?.teleport?.(0, 0, 14.6));
   await a.waitForFunction(
-    () => window.__THE_WORLD__?.net?.().remotes.some((r) => Math.abs(r.z - 20.6) < 0.3),
+    () => window.__THE_WORLD__?.net?.().remotes.some((r) => Math.abs(r.z - 14.6) < 0.3),
     undefined,
     SLOW,
   );
   await expect(b.getByTestId('health')).toContainText('100 / 100');
 
   // A swings until B falls (each hit takes 20; the server decides what lands). Stop on the death
-  // record, not on health: B respawns next to A, and a slow browser may read the respawned health.
+  // record, not on health: a slow browser may only see B's health after the respawn.
   const deaths = () => b.evaluate(() => window.__THE_WORLD__?.combat?.().deaths ?? 0);
   while ((await deaths()) === 0) {
     const hp = await health(b);
-    await a.keyboard.press('KeyF');
-    await b.waitForFunction(
+    await strike(
+      a,
+      b,
+      'KeyF',
       (before) => {
         const c = window.__THE_WORLD__?.combat?.();
         return (c?.deaths ?? 0) > 0 || (c?.health ?? before) < before;
       },
       hp,
-      SLOW,
     );
   }
   // B died to A, once. (The death screen only lasts the 5 s respawn, which slow test browsers can
@@ -110,8 +135,8 @@ test('two players fight: one dies, loot drops and is picked up, the loser respaw
     undefined,
     SLOW,
   );
-  await a.keyboard.press('KeyR');
-  await b.waitForFunction(() => window.__THE_WORLD__?.combat?.().health === 88, undefined, SLOW);
+  await strike(a, b, 'KeyR', () => (window.__THE_WORLD__?.combat?.().health ?? 100) < 100, 0);
+  expect(await health(b)).toBe(88);
 
   await a.context().close();
   await b.context().close();
