@@ -37,6 +37,7 @@ export class NetClient {
   private closed = false;
   status: NetStatus = 'connecting';
   you: string | null = null;
+  private readonly listeners = new Map<string, ((message: never) => void)[]>();
 
   constructor(
     url: string,
@@ -57,6 +58,14 @@ export class NetClient {
     } catch {
       this.scheduleRetry();
     }
+  }
+
+  /** Listens for a message type on the current and any future room (survives rejoins). */
+  on<T>(type: string, listener: (message: T) => void): void {
+    const list = this.listeners.get(type) ?? [];
+    list.push(listener as (message: never) => void);
+    this.listeners.set(type, list);
+    this.room?.onMessage(type, listener);
   }
 
   send(type: string, message?: unknown): void {
@@ -82,6 +91,9 @@ export class NetClient {
     room.onMessage(MSG.correction, (m: Vec3) => this.handlers.correction(m));
     room.onMessage(MSG.chatMessage, (m: ChatMessage) => this.handlers.chat(m));
     room.onMessage(MSG.chatNotice, (m: { text: string }) => this.handlers.notice(m.text));
+    for (const [type, list] of this.listeners) {
+      for (const listener of list) room.onMessage(type, listener);
+    }
     // The SDK tries to resume the same session first; `onLeave` means that gave up.
     room.onDrop(() => this.setStatus('reconnecting'));
     room.onReconnect(() => this.setStatus('online'));
