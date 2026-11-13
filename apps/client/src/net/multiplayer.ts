@@ -1,6 +1,7 @@
 import * as THREE from 'three/webgpu';
 import { MSG, NET, type Appearance, type Pose } from '@the-world/shared';
 import type { Game } from '../game/Game';
+import { ChatBox } from '../ui/ChatBox';
 import { NetClient, type NetStatus } from './NetClient';
 import { RemotePlayers } from './RemotePlayers';
 
@@ -21,8 +22,17 @@ export function startMultiplayer(
 ): Multiplayer {
   const remotes = new RemotePlayers(game.scene);
   const pill = statusPill();
+  // Assigned just below; the chat box only calls it after the player presses Enter.
+  let client: NetClient | null = null;
+  const chat = new ChatBox({
+    send: (channel, text) => client?.send(MSG.chat, { channel, text }),
+    canOpen: () => game.currentMode === 'play' && game.input.enabled,
+    onTyping: (typing) => {
+      game.textInputActive = typing;
+    },
+  });
 
-  const client = new NetClient(
+  client = new NetClient(
     url,
     { appearance, ...(session ? { session } : {}) },
     {
@@ -34,12 +44,21 @@ export function startMultiplayer(
       left: (id) => remotes.remove(id),
       snapshot: (m) => remotes.onSnapshot(m, performance.now()),
       correction: (p) => game.player.teleport(new THREE.Vector3(p.x, p.y, p.z)),
+      chat: (m) => {
+        const mine = m.from === client?.you;
+        chat.add(m, mine);
+        if (m.channel !== 'nearby') return;
+        if (mine) game.bubble.say(m.text, performance.now());
+        else remotes.say(m.from, m.text, performance.now());
+      },
+      notice: (text) => chat.notice(text),
       status: (s) => renderStatus(pill, s, 0),
     },
   );
 
-  game.onRespawn = () => client.send(MSG.respawn);
-  game.onTeleport = (p) => client.send(MSG.teleport, { x: p.x, y: p.y, z: p.z });
+  const net = client;
+  game.onRespawn = () => net.send(MSG.respawn);
+  game.onTeleport = (p) => net.send(MSG.teleport, { x: p.x, y: p.y, z: p.z });
 
   let sinceSend = 0;
   let sinceHud = 0;
@@ -49,18 +68,18 @@ export function startMultiplayer(
     sinceSend += dt;
     if (sinceSend >= 1 / NET.tickRate) {
       sinceSend = 0;
-      client.send(MSG.move, pose(game));
+      net.send(MSG.move, pose(game));
     }
     sinceHud += dt;
     if (sinceHud > 0.5) {
       sinceHud = 0;
-      renderStatus(pill, client.status, remotes.visible().length);
+      renderStatus(pill, net.status, remotes.visible().length);
     }
   });
 
-  renderStatus(pill, client.status, 0);
-  void client.connect();
-  return { client, remotes };
+  renderStatus(pill, net.status, 0);
+  void net.connect();
+  return { client: net, remotes };
 }
 
 function pose(game: Game): Pose {

@@ -11,6 +11,7 @@ import {
 } from '@the-world/shared';
 import { OrbitCamera, type CameraSettings } from './camera/OrbitCamera';
 import { CharacterModel } from './character/CharacterModel';
+import { SpeechBubble } from './character/SpeechBubble';
 import { Hud } from '../ui/Hud';
 import { Input } from './input';
 import { Interactions } from './interact/Interactions';
@@ -59,6 +60,10 @@ export class Game {
   onRespawn: (() => void) | null = null;
   /** Called after a debug teleport, so the server can follow. */
   onTeleport: ((feet: THREE.Vector3) => void) | null = null;
+  /** True while a text box (chat) has the keyboard: menus and Esc leave it alone. */
+  textInputActive = false;
+  /** What the local player last said nearby. */
+  readonly bubble = new SpeechBubble(2.3);
 
   constructor(private readonly opts: GameOptions) {
     const { rapier, renderer } = opts;
@@ -76,6 +81,7 @@ export class Game {
     this.player = new PlayerController(rapier, this.world, this.level.spawn);
     this.avatar = new CharacterModel(opts.appearance ?? DEFAULT_APPEARANCE);
     this.scene.add(this.avatar.root);
+    this.avatar.root.add(this.bubble.sprite);
 
     this.orbit = new OrbitCamera(
       this.camera,
@@ -198,6 +204,7 @@ export class Game {
       camera: this.camera,
     });
 
+    this.bubble.update(performance.now());
     for (const system of this.systems) system(dt, this.elapsed);
 
     this.opts.renderer.render(this.scene, this.camera);

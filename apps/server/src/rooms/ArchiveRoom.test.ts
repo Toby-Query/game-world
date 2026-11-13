@@ -6,6 +6,7 @@ import {
   ARCHIVE_ROOM,
   DEFAULT_APPEARANCE,
   MSG,
+  type ChatMessage,
   type SnapshotMessage,
   type Vec3,
   type WelcomeMessage,
@@ -90,5 +91,41 @@ describe('ArchiveRoom', () => {
     expect(a.room.roomId).not.toBe(b.room.roomId);
     await a.room.leave();
     await b.room.leave();
+  });
+});
+
+describe('chat', () => {
+  it('delivers nearby chat within earshot, masked, and global chat across cells', async () => {
+    const a = await join('Talker');
+    const b = await join('Listener');
+    const far = await join('Faraway');
+    const otherCell = await join('Elsewhere', '1:0');
+    far.room.send(MSG.teleport, { x: 0, y: 0, z: 22 + 60 });
+    await new Promise((r) => setTimeout(r, 100));
+
+    const heard = next<ChatMessage>(b.room, MSG.chatMessage);
+    let farHeard = false;
+    far.room.onMessage(MSG.chatMessage, () => {
+      farHeard = true;
+    });
+    a.room.send(MSG.chat, { channel: 'nearby', text: 'well shit, hello' });
+    const message = await heard;
+    expect(message).toMatchObject({ name: 'Talker', channel: 'nearby', text: 'well ****, hello' });
+    await new Promise((r) => setTimeout(r, 100));
+    expect(farHeard).toBe(false);
+
+    const across = next<ChatMessage>(otherCell.room, MSG.chatMessage);
+    a.room.send(MSG.chat, { channel: 'global', text: 'anyone out there?' });
+    expect((await across).text).toBe('anyone out there?');
+
+    for (const r of [a, b, far, otherCell]) await r.room.leave();
+  });
+
+  it('rate limits bursts with a notice', async () => {
+    const a = await join('Spammer');
+    const notice = next<{ text: string }>(a.room, MSG.chatNotice);
+    for (let i = 0; i < 8; i++) a.room.send(MSG.chat, { channel: 'nearby', text: `msg ${i}` });
+    expect((await notice).text).toMatch(/Slow down/);
+    await a.room.leave();
   });
 });

@@ -1,0 +1,19 @@
+{
+  "note": "Words masked in chat. Matching ignores case, common letter swaps (4→a, 3→e, 0→o, 1/!→i, $→s, @→a) and repeated letters, and only matches whole words or words with common endings, so 'class' and 'assess' stay untouched.",
+  "words": [
+    "fuck",
+    "shit",
+    "bitch",
+    "bastard",
+    "asshole",
+    "dick",
+    "cunt",
+    "piss",
+    "wanker",
+    "twat",
+    "bollocks",
+    "slut",
+    "whore",
+    "motherfucker"
+  ]
+}

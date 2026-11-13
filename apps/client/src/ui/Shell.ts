@@ -323,7 +323,7 @@ export class Shell {
   }
 
   private readonly onKeyDown = (e: KeyboardEvent): void => {
-    if (e.code !== 'Escape' || e.repeat) return;
+    if (e.code !== 'Escape' || e.repeat || this.game.textInputActive) return;
     // Some browsers deliver Esc after it already released the mouse; that's handled below.
     if (performance.now() - this.lockLostAt < 300) return;
     if (this.game.currentMode !== 'play') return;
@@ -339,7 +339,7 @@ export class Shell {
   private readonly onPointerLockChange = (): void => {
     if (document.pointerLockElement) return;
     this.lockLostAt = performance.now();
-    if (this.game.currentMode !== 'play' || this.paused) return;
+    if (this.game.currentMode !== 'play' || this.paused || this.game.textInputActive) return;
     if (this.game.hud.panelOpen) {
       this.game.hud.closePanel();
     } else {
