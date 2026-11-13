@@ -7,8 +7,8 @@ export const NET = {
   tickRate: 15,
   /** Only players within this many metres of you are sent to you. */
   interestRadius: 80,
-  /** Fastest legal horizontal speed (sprint plus slack for lag), m/s. */
-  maxHorizontalSpeed: 11,
+  /** Fastest legal horizontal speed (a dodge dash plus slack for lag), m/s. */
+  maxHorizontalSpeed: 14,
   /** Fastest legal vertical speed (falls and jumps), m/s. */
   maxVerticalSpeed: 45,
   /** Remote players are drawn this far in the past so there are always two snapshots to blend. */
@@ -43,6 +43,24 @@ export const MSG = {
   chatMessage: 'chat-message',
   /** server → client: a message about your own chat, e.g. rate limited ({ text }). */
   chatNotice: 'chat-notice',
+  /** client → server: melee or ranged attack (AttackMessage). */
+  attack: 'attack',
+  /** client → server: dodge (brief invulnerability). */
+  dodge: 'dodge',
+  /** client → server: pick up a loot bag ({ id }). */
+  pickup: 'pickup',
+  /** server → clients: an attack happened, for effects (AttackEvent). */
+  attacked: 'attacked',
+  /** server → clients: an attack landed (HitMessage). */
+  hit: 'hit',
+  /** server → clients: a player died (DeathMessage). */
+  died: 'died',
+  /** server → clients: a player came back (RespawnMessage). */
+  respawned: 'respawned',
+  /** server → client: every loot bag in the room (LootBag[]), sent on join and on change. */
+  loot: 'loot',
+  /** server → client: your inventory changed (InventoryItem[]). */
+  inventory: 'inventory',
 } as const;
 
 /** Body pose sent with every move so remote characters animate. */
@@ -76,6 +94,8 @@ export interface WelcomeMessage {
 
 export interface PlayerSnapshot extends Pose {
   id: string;
+  /** Health, 0 when dead. */
+  hp: number;
 }
 
 export interface SnapshotMessage {
